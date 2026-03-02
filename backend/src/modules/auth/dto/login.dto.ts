@@ -1,8 +1,11 @@
-import { z } from "zod";
+import { t } from "elysia";
+import { db } from "@/infrastructure/pg/model";
 
-export const loginDto = z.object({
-	email: z.email(),
-	password: z.string().min(1),
+const { email } = db.insert.user;
+
+export const loginDto = t.Object({
+	email,
+	password: t.String({ minLength: 1 }),
 });
 
-export type LoginDto = z.infer<typeof loginDto>;
+export type LoginDto = typeof loginDto.static;

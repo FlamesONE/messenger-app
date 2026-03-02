@@ -5,35 +5,29 @@ import type {
 	UpdateUserData,
 	UserRecord,
 } from "@/repositories/interfaces/user.repository";
-import { db } from "./pg.client";
-import { users } from "./schema";
+import { db } from "@/infrastructure/pg/client";
+import { users } from "@/infrastructure/pg/schema";
 
 export class PgUserRepository implements IUserRepository {
 	async findById(id: string): Promise<UserRecord | null> {
-		const [user] = await db
-			.select()
-			.from(users)
-			.where(eq(users.id, id))
-			.limit(1);
-		return user ?? null;
+		const row = await db.query.users.findFirst({
+			where: eq(users.id, id),
+		});
+		return row ?? null;
 	}
 
 	async findByEmail(email: string): Promise<UserRecord | null> {
-		const [user] = await db
-			.select()
-			.from(users)
-			.where(eq(users.email, email))
-			.limit(1);
-		return user ?? null;
+		const row = await db.query.users.findFirst({
+			where: eq(users.email, email),
+		});
+		return row ?? null;
 	}
 
 	async findByUsername(username: string): Promise<UserRecord | null> {
-		const [user] = await db
-			.select()
-			.from(users)
-			.where(eq(users.username, username))
-			.limit(1);
-		return user ?? null;
+		const row = await db.query.users.findFirst({
+			where: eq(users.username, username),
+		});
+		return row ?? null;
 	}
 
 	async create(data: CreateUserData): Promise<UserRecord> {

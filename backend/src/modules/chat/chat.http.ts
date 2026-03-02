@@ -17,11 +17,11 @@ export function chatHttp(
 			async ({ body, userId }) => {
 				return createChatUC.execute(userId, body);
 			},
-			{ body: createChatDto },
+			{ auth: true, body: createChatDto },
 		)
 		.get("/", async ({ userId }) => {
 			return getUserChatsUC.execute(userId);
-		})
+		}, { auth: true })
 		.post(
 			"/:chatId/members",
 			async ({ params, body, userId }) => {
@@ -29,6 +29,7 @@ export function chatHttp(
 				return { success: true };
 			},
 			{
+				auth: true,
 				params: t.Object({ chatId: t.String() }),
 				body: t.Object({ userId: t.String() }),
 			},

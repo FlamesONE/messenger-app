@@ -9,7 +9,7 @@ const errorStatusMap: Record<string, number> = {
 	CONFLICT: 409,
 };
 
-export function mapErrorToResponse(error: Error, elysiaCode: string): Response {
+export function mapErrorToResponse(error: Error, elysiaCode: string | number): Response {
 	if (error instanceof DomainError) {
 		const status = errorStatusMap[error.code] ?? 500;
 		return new Response(

@@ -12,7 +12,7 @@ export const authRateLimit = new Elysia({ name: "auth-rate-limit" }).use(
 	rateLimit({
 		max: 10,
 		duration: 60_000,
-		message: "Too many auth attempts, please try again later",
+		errorResponse: "Too many auth attempts, please try again later",
 	}),
 );
 
@@ -20,6 +20,6 @@ export const uploadRateLimit = new Elysia({ name: "upload-rate-limit" }).use(
 	rateLimit({
 		max: 20,
 		duration: 60_000,
-		message: "Too many uploads, please try again later",
+		errorResponse: "Too many uploads, please try again later",
 	}),
 );

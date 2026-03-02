@@ -11,16 +11,26 @@ export const jwtPlugin = new Elysia({ name: "jwt-plugin" }).use(
 
 export const authGuard = new Elysia({ name: "auth-guard" })
 	.use(jwtPlugin)
-	.derive(async ({ jwt, headers, status }) => {
-		const raw = headers.authorization;
-		if (!raw?.startsWith("Bearer ")) {
-			return status(401, { error: "UNAUTHORIZED", message: "Missing token" });
-		}
+	.macro({
+		auth: {
+			async resolve({ jwt, headers, status }) {
+				const raw = headers.authorization;
+				if (!raw?.startsWith("Bearer ")) {
+					return status(401, {
+						error: "UNAUTHORIZED",
+						message: "Missing token",
+					});
+				}
 
-		const payload = await jwt.verify(raw.slice(7));
-		if (!payload?.sub) {
-			return status(401, { error: "UNAUTHORIZED", message: "Invalid token" });
-		}
+				const payload = await jwt.verify(raw.slice(7));
+				if (!payload || !payload.sub) {
+					return status(401, {
+						error: "UNAUTHORIZED",
+						message: "Invalid token",
+					});
+				}
 
-		return { userId: payload.sub as string };
+				return { userId: payload.sub as string };
+			},
+		},
 	});

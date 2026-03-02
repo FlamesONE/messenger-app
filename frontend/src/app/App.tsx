@@ -1,7 +1,7 @@
-import { ComponentExample } from "@/shared/ui/components/component-example";
+import { EdenTest } from "./EdenTest";
 
 export function App() {
-  return <ComponentExample />;
+  return <EdenTest />;
 }
 
 export default App;

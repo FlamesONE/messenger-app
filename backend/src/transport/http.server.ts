@@ -28,5 +28,5 @@ export function createHttpServer() {
 			set.headers["Permissions-Policy"] =
 				"camera=(), microphone=(), geolocation=()";
 		})
-		.onError(({ error, code }) => mapErrorToResponse(error, code));
+		.onError(({ error, code }) => mapErrorToResponse(error as Error, code));
 }

@@ -1,9 +1,9 @@
-import { z } from "zod";
+import { t } from "elysia";
 
-export const createChatDto = z.object({
-	name: z.string().min(1).max(255).optional(),
-	isGroup: z.boolean().default(false),
-	memberIds: z.array(z.string()).min(1),
+export const createChatDto = t.Object({
+	name: t.Optional(t.String({ minLength: 1, maxLength: 255 })),
+	isGroup: t.Boolean({ default: false }),
+	memberIds: t.Array(t.String(), { minItems: 1 }),
 });
 
-export type CreateChatDto = z.infer<typeof createChatDto>;
+export type CreateChatDto = typeof createChatDto.static;

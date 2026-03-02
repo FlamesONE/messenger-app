@@ -19,7 +19,7 @@ export function messageHttp(
 			async ({ body, userId }) => {
 				return sendMessageUC.execute(userId, body);
 			},
-			{ body: sendMessageDto },
+			{ auth: true, body: sendMessageDto },
 		)
 		.get(
 			"/:chatId",
@@ -28,6 +28,7 @@ export function messageHttp(
 				return getHistoryUC.execute(userId, params.chatId, query.limit, before);
 			},
 			{
+				auth: true,
 				params: t.Object({ chatId: t.String() }),
 				query: t.Object({
 					limit: t.Optional(t.Number({ minimum: 1, maximum: 100 })),
@@ -42,6 +43,7 @@ export function messageHttp(
 				return { success: true };
 			},
 			{
+				auth: true,
 				params: t.Object({ chatId: t.String(), messageId: t.String() }),
 			},
 		)
@@ -52,6 +54,7 @@ export function messageHttp(
 				return { success: true };
 			},
 			{
+				auth: true,
 				params: t.Object({ chatId: t.String(), messageId: t.String() }),
 			},
 		);

@@ -10,7 +10,8 @@ const envSchema = z.object({
 
 	SCYLLA_CONTACT_POINTS: z.string().default("localhost:9042"),
 	SCYLLA_DATACENTER: z.string().default("datacenter1"),
-	SCYLLA_KEYSPACE: z.string().default("messenger"),
+	SCYLLA_KEYSPACE: z.string().regex(/^[a-zA-Z_]\w{0,47}$/).default("messenger"),
+	SCYLLA_REPLICATION_FACTOR: z.coerce.number().min(1).default(1),
 
 	REDIS_URL: z.string().default("redis://localhost:6379"),
 

@@ -1,10 +1,13 @@
-import { z } from "zod";
+import { t } from "elysia";
+import { db } from "@/infrastructure/pg/model";
 
-export const registerDto = z.object({
-	email: z.email(),
-	username: z.string().min(3).max(64),
-	displayName: z.string().min(1).max(128),
-	password: z.string().min(8).max(128),
+const { email, username, displayName } = db.insert.user;
+
+export const registerDto = t.Object({
+	email,
+	username: t.String({ minLength: 3, maxLength: 64 }),
+	displayName: t.String({ minLength: 1, maxLength: 128 }),
+	password: t.String({ minLength: 8, maxLength: 128 }),
 });
 
-export type RegisterDto = z.infer<typeof registerDto>;
+export type RegisterDto = typeof registerDto.static;

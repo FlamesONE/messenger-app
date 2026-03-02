@@ -1,21 +1,19 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import type {
 	ChatMemberRecord,
 	ChatRecord,
 	CreateChatData,
 	IChatRepository,
 } from "@/repositories/interfaces/chat.repository";
-import { db } from "./pg.client";
-import { chatMembers, chats } from "./schema";
+import { db } from "@/infrastructure/pg/client";
+import { chatMembers, chats } from "@/infrastructure/pg/schema";
 
 export class PgChatRepository implements IChatRepository {
 	async findById(id: string): Promise<ChatRecord | null> {
-		const [chat] = await db
-			.select()
-			.from(chats)
-			.where(eq(chats.id, id))
-			.limit(1);
-		return chat ?? null;
+		const row = await db.query.chats.findFirst({
+			where: eq(chats.id, id),
+		});
+		return row ?? null;
 	}
 
 	async findByUserId(userId: string): Promise<ChatRecord[]> {
@@ -26,35 +24,33 @@ export class PgChatRepository implements IChatRepository {
 
 		if (memberRows.length === 0) return [];
 
-		const results: ChatRecord[] = [];
-		for (const row of memberRows) {
-			const chat = await this.findById(row.chatId);
-			if (chat) results.push(chat);
-		}
-		return results;
+		const chatIds = memberRows.map((r) => r.chatId);
+		return db.select().from(chats).where(inArray(chats.id, chatIds));
 	}
 
 	async create(data: CreateChatData): Promise<ChatRecord> {
-		const [chat] = await db
-			.insert(chats)
-			.values({
-				name: data.name,
-				isGroup: data.isGroup,
-				createdById: data.createdById,
-			})
-			.returning();
+		return db.transaction(async (tx) => {
+			const [chat] = await tx
+				.insert(chats)
+				.values({
+					name: data.name,
+					isGroup: data.isGroup,
+					createdById: data.createdById,
+				})
+				.returning();
 
-		const memberValues = data.memberIds.map((userId) => ({
-			chatId: chat.id,
-			userId,
-			role: userId === data.createdById ? "owner" : "member",
-		}));
+			const memberValues = data.memberIds.map((userId) => ({
+				chatId: chat.id,
+				userId,
+				role: userId === data.createdById ? "owner" : "member",
+			}));
 
-		if (memberValues.length > 0) {
-			await db.insert(chatMembers).values(memberValues);
-		}
+			if (memberValues.length > 0) {
+				await tx.insert(chatMembers).values(memberValues);
+			}
 
-		return chat;
+			return chat;
+		});
 	}
 
 	async addMember(
@@ -77,17 +73,20 @@ export class PgChatRepository implements IChatRepository {
 	}
 
 	async getMembers(chatId: string): Promise<ChatMemberRecord[]> {
-		return db.select().from(chatMembers).where(eq(chatMembers.chatId, chatId));
+		const rows = await db
+			.select()
+			.from(chatMembers)
+			.where(eq(chatMembers.chatId, chatId));
+		return rows as ChatMemberRecord[];
 	}
 
 	async isMember(chatId: string, userId: string): Promise<boolean> {
-		const [row] = await db
-			.select()
-			.from(chatMembers)
-			.where(
-				and(eq(chatMembers.chatId, chatId), eq(chatMembers.userId, userId)),
-			)
-			.limit(1);
+		const row = await db.query.chatMembers.findFirst({
+			where: and(
+				eq(chatMembers.chatId, chatId),
+				eq(chatMembers.userId, userId),
+			),
+		});
 		return !!row;
 	}
 }
