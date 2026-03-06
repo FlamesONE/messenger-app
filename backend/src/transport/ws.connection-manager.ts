@@ -1,34 +1,44 @@
 import type { WsMessage } from "@/shared/types/ws-events";
+import type { IWsManager, IWsSocket } from "@/transport/ws.types";
 
-export interface WsSocket {
-	id: string;
-	send: (data: unknown) => void;
-	data: { userId?: string };
-}
+export class WsConnectionManager implements IWsManager {
+	private rooms = new Map<string, Set<IWsSocket>>();
+	private userSockets = new Map<string, Set<IWsSocket>>();
 
-export class WsConnectionManager {
-	private connections = new Map<string, Set<WsSocket>>();
-
-	join(chatId: string, ws: WsSocket): void {
-		if (!this.connections.has(chatId)) {
-			this.connections.set(chatId, new Set());
+	registerUser(userId: string, ws: IWsSocket): void {
+		if (!this.userSockets.has(userId)) {
+			this.userSockets.set(userId, new Set());
 		}
-		const room = this.connections.get(chatId);
-		if (room) room.add(ws);
+		this.userSockets.get(userId)!.add(ws);
 	}
 
-	leave(chatId: string, ws: WsSocket): void {
-		this.connections.get(chatId)?.delete(ws);
+	join(chatId: string, ws: IWsSocket): void {
+		if (!this.rooms.has(chatId)) {
+			this.rooms.set(chatId, new Set());
+		}
+		this.rooms.get(chatId)!.add(ws);
 	}
 
-	removeFromAll(ws: WsSocket): void {
-		for (const [, sockets] of this.connections) {
+	leave(chatId: string, ws: IWsSocket): void {
+		this.rooms.get(chatId)?.delete(ws);
+	}
+
+	removeFromAll(ws: IWsSocket): void {
+		for (const [, sockets] of this.rooms) {
 			sockets.delete(ws);
+		}
+		const userId = ws.data.userId;
+		if (userId) {
+			const userSet = this.userSockets.get(userId);
+			if (userSet) {
+				userSet.delete(ws);
+				if (userSet.size === 0) this.userSockets.delete(userId);
+			}
 		}
 	}
 
 	broadcastToChat(chatId: string, message: WsMessage): void {
-		const sockets = this.connections.get(chatId);
+		const sockets = this.rooms.get(chatId);
 		if (!sockets) return;
 
 		const payload = JSON.stringify(message);
@@ -37,16 +47,18 @@ export class WsConnectionManager {
 		}
 	}
 
+	isUserOnline(userId: string): boolean {
+		const sockets = this.userSockets.get(userId);
+		return !!sockets && sockets.size > 0;
+	}
+
 	broadcastToUser(userId: string, message: WsMessage): void {
+		const sockets = this.userSockets.get(userId);
+		if (!sockets) return;
+
 		const payload = JSON.stringify(message);
-		for (const [, sockets] of this.connections) {
-			for (const ws of sockets) {
-				if (ws.data.userId === userId) {
-					ws.send(payload);
-				}
-			}
+		for (const ws of sockets) {
+			ws.send(payload);
 		}
 	}
 }
-
-export const wsManager = new WsConnectionManager();

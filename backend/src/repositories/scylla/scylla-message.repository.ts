@@ -9,13 +9,11 @@ import type {
 import { scyllaClient } from "@/infrastructure/scylla/client";
 import type { types } from "cassandra-driver";
 
-// ─── Prepared query strings ─────────────────────────────
-
 const Q = {
 	findById:
 		"SELECT * FROM messages WHERE chat_id = ? AND created_at = ? AND id = ? LIMIT 1",
-	findByIdScan:
-		"SELECT * FROM messages WHERE chat_id = ? AND id = ? LIMIT 1 ALLOW FILTERING",
+	findByIdWithIndex:
+		"SELECT * FROM messages WHERE chat_id = ? AND id = ? LIMIT 1",
 	historyBefore:
 		"SELECT * FROM messages WHERE chat_id = ? AND created_at < ? ORDER BY created_at DESC LIMIT ?",
 	history:
@@ -24,8 +22,6 @@ const Q = {
 		"INSERT INTO messages (id, chat_id, sender_id, content, media, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
 	softDelete:
 		"UPDATE messages SET deleted_at = ? WHERE chat_id = ? AND created_at = ? AND id = ?",
-	softDeleteScan:
-		"UPDATE messages SET deleted_at = ? WHERE chat_id = ? AND created_at = (SELECT created_at FROM messages WHERE chat_id = ? AND id = ? LIMIT 1 ALLOW FILTERING) AND id = ?",
 	markAsRead:
 		"INSERT INTO message_reads (chat_id, message_id, user_id, read_at) VALUES (?, ?, ?, ?)",
 } as const;
@@ -36,7 +32,7 @@ export class ScyllaMessageRepository implements IMessageRepository {
 		messageId: string,
 	): Promise<MessageRecord | null> {
 		const result = await scyllaClient.execute(
-			Q.findByIdScan,
+			Q.findByIdWithIndex,
 			[chatId, messageId],
 			{ prepare: true },
 		);
@@ -86,7 +82,7 @@ export class ScyllaMessageRepository implements IMessageRepository {
 		if (!msg) return;
 
 		await scyllaClient.execute(
-			"UPDATE messages SET deleted_at = ? WHERE chat_id = ? AND created_at = ? AND id = ?",
+			Q.softDelete,
 			[new Date(), chatId, msg.createdAt, messageId],
 			{ prepare: true },
 		);

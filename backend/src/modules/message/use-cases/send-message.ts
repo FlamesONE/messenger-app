@@ -28,13 +28,24 @@ export class SendMessageUseCase {
 
 		let media: MediaAttachment[] = [];
 		if (dto.mediaKeys && dto.mediaKeys.length > 0) {
-			media = dto.mediaKeys.map((key) => ({
-				url: this.fileStorage.getUrl(key),
-				key,
-				type: key.split(".").pop() ?? "unknown",
-				size: 0,
-				name: key.split("/").pop() ?? key,
-			}));
+			media = dto.mediaKeys.map((key) => {
+				const ext = key.split(".").pop() ?? "bin";
+				const mimeMap: Record<string, string> = {
+					jpg: "image/jpeg",
+					jpeg: "image/jpeg",
+					png: "image/png",
+					webp: "image/webp",
+					gif: "image/gif",
+					pdf: "application/pdf",
+				};
+				return {
+					url: this.fileStorage.getUrl(key),
+					key,
+					type: mimeMap[ext.toLowerCase()] ?? `application/${ext}`,
+					size: 0, // TODO: store upload metadata to retrieve actual size
+					name: key.split("/").pop() ?? key,
+				};
+			});
 		}
 
 		return this.messageRepo.create({

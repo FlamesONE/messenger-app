@@ -1,10 +1,16 @@
+import type { IJobQueue } from "@/infrastructure/bullmq/types";
+import type { IWsManager, IWsRouter } from "@/transport/ws.types";
 import { logger } from "@/shared/logger";
-import { wsManager } from "@/transport/ws.connection-manager";
-import { registerWsHandler } from "@/transport/ws.gateway";
+import type { NotificationJobData } from "./jobs/notification.types";
 import type { SendMessageUseCase } from "./use-cases/send-message";
 
-export function registerMessageWsHandlers(sendMessageUC: SendMessageUseCase) {
-	registerWsHandler("message:new", async (ws, data) => {
+export function registerMessageWsHandlers(
+	sendMessageUC: SendMessageUseCase,
+	notificationQueue: IJobQueue<NotificationJobData>,
+	wsManager: IWsManager,
+	wsRouter: IWsRouter,
+) {
+	wsRouter.register("message:new", async (ws, data) => {
 		try {
 			const { chatId, content, mediaKeys } = data as {
 				chatId: string;
@@ -34,6 +40,13 @@ export function registerMessageWsHandlers(sendMessageUC: SendMessageUseCase) {
 					})),
 					createdAt: message.createdAt.toISOString(),
 				},
+			});
+
+			await notificationQueue.add("new-message", {
+				chatId: message.chatId,
+				messageId: message.id,
+				senderId: message.senderId,
+				content: message.content,
 			});
 		} catch (err) {
 			logger.error(err, "WS message:new handler error");

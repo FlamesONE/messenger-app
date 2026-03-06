@@ -1,15 +1,44 @@
+import type { IChatRepository } from "@/repositories/interfaces/chat.repository";
+import type { IWsManager, IWsRouter } from "@/transport/ws.types";
 import { logger } from "@/shared/logger";
-import { wsManager } from "@/transport/ws.connection-manager";
-import { registerWsHandler } from "@/transport/ws.gateway";
 
-export function registerChatWsHandlers() {
-	registerWsHandler("chat:typing", async (_ws, data) => {
+export function registerChatWsHandlers(
+	chatRepo: IChatRepository,
+	wsManager: IWsManager,
+	wsRouter: IWsRouter,
+) {
+	wsRouter.register("chat:join", async (ws, data) => {
 		try {
-			const { chatId, userId, isTyping } = data as {
-				chatId: string;
-				userId: string;
-				isTyping: boolean;
-			};
+			const { chatId } = data as { chatId: string };
+			const userId = ws.data.userId;
+			if (!userId) return;
+
+			const isMember = await chatRepo.isMember(chatId, userId);
+			if (!isMember) {
+				ws.send(JSON.stringify({ event: "error", data: { message: "Not a member of this chat" } }));
+				return;
+			}
+
+			wsManager.join(chatId, ws);
+		} catch (err) {
+			logger.error(err, "WS chat:join handler error");
+		}
+	});
+
+	wsRouter.register("chat:leave", async (ws, data) => {
+		try {
+			const { chatId } = data as { chatId: string };
+			wsManager.leave(chatId, ws);
+		} catch (err) {
+			logger.error(err, "WS chat:leave handler error");
+		}
+	});
+
+	wsRouter.register("chat:typing", async (ws, data) => {
+		try {
+			const { chatId, isTyping } = data as { chatId: string; isTyping: boolean };
+			const userId = ws.data.userId;
+			if (!userId) return;
 
 			wsManager.broadcastToChat(chatId, {
 				event: "chat:typing",
@@ -20,10 +49,12 @@ export function registerChatWsHandlers() {
 		}
 	});
 
-	registerWsHandler("chat:presence", async (_ws, data) => {
+	wsRouter.register("chat:presence", async (ws, data) => {
 		try {
-			const { userId, status, lastSeen } = data as {
-				userId: string;
+			const userId = ws.data.userId;
+			if (!userId) return;
+
+			const { status, lastSeen } = data as {
 				status: "online" | "offline";
 				lastSeen?: string;
 			};

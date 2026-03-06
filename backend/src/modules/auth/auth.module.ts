@@ -1,12 +1,11 @@
-import type { IUserRepository } from "@/repositories/interfaces/user.repository";
+import type { LoginUseCase } from "./use-cases/login";
+import type { RegisterUseCase } from "./use-cases/register";
 import { authHttp } from "./auth.http";
-import { LoginUseCase } from "./use-cases/login";
-import { RegisterUseCase } from "./use-cases/register";
 
-export function createAuthModule(userRepo: IUserRepository) {
-	const registerUC = new RegisterUseCase(userRepo);
-	const loginUC = new LoginUseCase(userRepo);
-
+export function createAuthModule(
+	registerUC: RegisterUseCase,
+	loginUC: LoginUseCase,
+) {
 	return {
 		http: authHttp(registerUC, loginUC),
 	};

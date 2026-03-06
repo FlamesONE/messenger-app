@@ -16,6 +16,21 @@ export interface WsEventMap {
 		messageId: string;
 		readBy: string;
 	};
+	"chat:join": {
+		chatId: string;
+	};
+	"chat:leave": {
+		chatId: string;
+	};
+	auth: {
+		token: string;
+	};
+	"auth:success": {
+		userId: string;
+	};
+	"auth:error": {
+		message: string;
+	};
 	"chat:typing": {
 		chatId: string;
 		userId: string;
@@ -25,6 +40,12 @@ export interface WsEventMap {
 		userId: string;
 		status: "online" | "offline";
 		lastSeen?: string;
+	};
+	"notification:new": {
+		chatId: string;
+		messageId: string;
+		senderName: string;
+		content: string;
 	};
 }
 

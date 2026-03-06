@@ -20,7 +20,8 @@ export function createHttpServer() {
 		)
 		.use(globalRateLimit)
 		.use(openapi())
-		.onAfterResponse(({ set }) => {
+		.get("/health", () => ({ status: "ok" }))
+		.onBeforeHandle(({ set }) => {
 			set.headers["X-Content-Type-Options"] = "nosniff";
 			set.headers["X-Frame-Options"] = "DENY";
 			set.headers["X-XSS-Protection"] = "0";

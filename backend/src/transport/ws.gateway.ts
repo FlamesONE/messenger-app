@@ -1,42 +1,62 @@
 import { Elysia } from "elysia";
-import { logger } from "@/shared/logger";
+import type { IWsManager, IWsRouter, IWsSocket } from "@/transport/ws.types";
 import type { WsEventName, WsMessage } from "@/shared/types/ws-events";
-import type { WsSocket } from "./ws.connection-manager";
-import { wsManager } from "./ws.connection-manager";
+import { logger } from "@/shared/logger";
+import { jwtPlugin } from "./auth.guard";
 
-type WsHandler = (ws: WsSocket, data: unknown) => void | Promise<void>;
+export function createWsGateway(wsManager: IWsManager, wsRouter: IWsRouter) {
+	return new Elysia({ name: "ws-gateway" })
+		.use(jwtPlugin)
+		.ws("/ws", {
+			open(ws) {
+				logger.debug({ id: ws.id }, "WebSocket connected, awaiting auth");
+			},
 
-const handlers = new Map<string, WsHandler>();
+			async message(ws, raw) {
+				try {
+					const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+					const { event, data } = parsed as WsMessage;
 
-export function registerWsHandler(event: WsEventName, handler: WsHandler) {
-	handlers.set(event, handler);
-}
+					if (event === "auth") {
+						const token = (data as { token?: string }).token;
+						if (!token) {
+							ws.send(JSON.stringify({ event: "auth:error", data: { message: "Token required" } }));
+							ws.close(4001, "Unauthorized");
+							return;
+						}
 
-export function createWsGateway() {
-	return new Elysia({ name: "ws-gateway" }).ws("/ws", {
-		open(ws) {
-			logger.debug({ id: ws.id }, "WebSocket connected");
-		},
+						const jwt = (ws.data as { jwt: { verify: (t: string) => Promise<{ sub?: string } | false> } }).jwt;
+						const payload = await jwt.verify(token);
 
-		message(ws, raw) {
-			try {
-				const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
-				const { event, data } = parsed as WsMessage;
+						if (!payload || !payload.sub) {
+							ws.send(JSON.stringify({ event: "auth:error", data: { message: "Invalid token" } }));
+							ws.close(4001, "Unauthorized");
+							return;
+						}
 
-				const handler = handlers.get(event);
-				if (handler) {
-					handler(ws as unknown as WsSocket, data);
-				} else {
-					logger.warn({ event }, "Unknown WS event");
+						const userId = payload.sub as string;
+						(ws.data as { userId?: string }).userId = userId;
+						wsManager.registerUser(userId, ws as unknown as IWsSocket);
+						ws.send(JSON.stringify({ event: "auth:success", data: { userId } }));
+						logger.debug({ id: ws.id, userId }, "WebSocket authenticated");
+						return;
+					}
+
+					const userId = (ws.data as { userId?: string }).userId;
+					if (!userId) {
+						ws.send(JSON.stringify({ event: "auth:error", data: { message: "Not authenticated" } }));
+						return;
+					}
+
+					await wsRouter.dispatch(event as WsEventName, ws as unknown as IWsSocket, data);
+				} catch (err) {
+					logger.error(err, "Failed to process WS message");
 				}
-			} catch (err) {
-				logger.error(err, "Failed to process WS message");
-			}
-		},
+			},
 
-		close(ws) {
-			wsManager.removeFromAll(ws as unknown as WsSocket);
-			logger.debug({ id: ws.id }, "WebSocket disconnected");
-		},
-	});
+			close(ws) {
+				wsManager.removeFromAll(ws as unknown as IWsSocket);
+				logger.debug({ id: ws.id }, "WebSocket disconnected");
+			},
+		});
 }

@@ -1,11 +1,13 @@
-import type { IFileStorage } from "@/repositories/interfaces/file-storage";
+import type { IJobQueue } from "@/infrastructure/bullmq/types";
+import type { MediaProcessingJobData } from "./jobs/media-processing.types";
 import { uploadHttp } from "./upload.http";
-import { UploadFileUseCase } from "./use-cases/upload-file";
+import type { UploadFileUseCase } from "./use-cases/upload-file";
 
-export function createUploadModule(fileStorage: IFileStorage) {
-	const uploadFileUC = new UploadFileUseCase(fileStorage);
-
+export function createUploadModule(
+	uploadFileUC: UploadFileUseCase,
+	mediaProcessingQueue: IJobQueue<MediaProcessingJobData>,
+) {
 	return {
-		http: uploadHttp(uploadFileUC),
+		http: uploadHttp(uploadFileUC, mediaProcessingQueue),
 	};
 }

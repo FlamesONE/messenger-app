@@ -1,28 +1,23 @@
-import type { IChatRepository } from "@/repositories/interfaces/chat.repository";
-import type { IFileStorage } from "@/repositories/interfaces/file-storage";
-import type { IMessageRepository } from "@/repositories/interfaces/message.repository";
+import type { IJobQueue } from "@/infrastructure/bullmq/types";
+import type { IWsManager, IWsRouter } from "@/transport/ws.types";
+import type { NotificationJobData } from "./jobs/notification.types";
 import { messageHttp } from "./message.http";
 import { registerMessageWsHandlers } from "./message.ws";
-import { DeleteMessageUseCase } from "./use-cases/delete-message";
-import { GetHistoryUseCase } from "./use-cases/get-history";
-import { MarkAsReadUseCase } from "./use-cases/mark-as-read";
-import { SendMessageUseCase } from "./use-cases/send-message";
+import type { DeleteMessageUseCase } from "./use-cases/delete-message";
+import type { GetHistoryUseCase } from "./use-cases/get-history";
+import type { MarkAsReadUseCase } from "./use-cases/mark-as-read";
+import type { SendMessageUseCase } from "./use-cases/send-message";
 
 export function createMessageModule(
-	messageRepo: IMessageRepository,
-	chatRepo: IChatRepository,
-	fileStorage: IFileStorage,
+	sendMessageUC: SendMessageUseCase,
+	getHistoryUC: GetHistoryUseCase,
+	deleteMessageUC: DeleteMessageUseCase,
+	markAsReadUC: MarkAsReadUseCase,
+	notificationQueue: IJobQueue<NotificationJobData>,
+	wsManager: IWsManager,
+	wsRouter: IWsRouter,
 ) {
-	const sendMessageUC = new SendMessageUseCase(
-		messageRepo,
-		chatRepo,
-		fileStorage,
-	);
-	const getHistoryUC = new GetHistoryUseCase(messageRepo, chatRepo);
-	const deleteMessageUC = new DeleteMessageUseCase(messageRepo);
-	const markAsReadUC = new MarkAsReadUseCase(messageRepo, chatRepo);
-
-	registerMessageWsHandlers(sendMessageUC);
+	registerMessageWsHandlers(sendMessageUC, notificationQueue, wsManager, wsRouter);
 
 	return {
 		http: messageHttp(
@@ -30,6 +25,8 @@ export function createMessageModule(
 			getHistoryUC,
 			deleteMessageUC,
 			markAsReadUC,
+			notificationQueue,
+			wsManager,
 		),
 	};
 }

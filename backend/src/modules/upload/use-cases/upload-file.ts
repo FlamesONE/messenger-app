@@ -11,7 +11,7 @@ const ALLOWED_TYPES = [
 const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 export class UploadFileUseCase {
-	constructor(private readonly storage: IFileStorage) {}
+	constructor(private readonly fileStorage: IFileStorage) {}
 
 	async execute(file: File) {
 		if (!ALLOWED_TYPES.includes(file.type)) {
@@ -24,7 +24,7 @@ export class UploadFileUseCase {
 
 		const buffer = Buffer.from(await file.arrayBuffer());
 
-		return this.storage.upload({
+		return this.fileStorage.upload({
 			buffer,
 			name: file.name,
 			type: file.type,
