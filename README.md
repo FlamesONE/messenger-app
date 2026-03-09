@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="images/logo.png" alt="Fasty" width="120" />
+  <img src="images/logo.png" alt="Fasty" />
 </p>
 
 <h1 align="center">Fasty Messenger</h1>
 
 <p align="center">
-  Мессенджер реального времени — упрощённая копия Telegram.<br/>
+  Мессенджер с личными сообщениями, беседами и профилями.<br/>
   Монорепо с отдельным <b>backend</b> и <b>frontend</b> для масштабируемости.
 </p>
 
