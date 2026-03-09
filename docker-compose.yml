@@ -37,7 +37,9 @@ services:
 
   # ─── Caddy (frontend + reverse proxy) ─────────────────
   caddy:
-    build: ./frontend
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
     networks:
       - default
       - kamal

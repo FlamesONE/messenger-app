@@ -28,7 +28,8 @@ export async function runScyllaMigrations(client: Client): Promise<void> {
 					msg.includes("already exist") ||
 					msg.includes("conflicts with an existing") ||
 					msg.includes("Invalid column name") ||
-					msg.includes("already exists");
+					msg.includes("already exists") ||
+					msg.includes("Secondary indexes are not supported");
 				if (!isAlreadyExists) throw err;
 				logger.debug({ migration: file, statement: stmt.slice(0, 80) }, "Skipped (already applied)");
 			}

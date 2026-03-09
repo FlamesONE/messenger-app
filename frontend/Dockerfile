@@ -1,15 +1,19 @@
 # Stage 1: Build frontend
 FROM oven/bun:1 AS builder
 
-WORKDIR /app
-COPY package.json bun.lock* ./
+WORKDIR /app/frontend
+COPY frontend/package.json frontend/bun.lock* ./
 RUN bun install --frozen-lockfile
 
-COPY . .
-RUN bun run build
+# Copy backend types (needed for @backend/* path alias)
+COPY backend/src /app/backend/src
+
+# Copy frontend source
+COPY frontend/ .
+RUN bunx vite build
 
 # Stage 2: Serve with Caddy
 FROM caddy:2-alpine
 
-COPY --from=builder /app/dist /srv
-COPY Caddyfile /etc/caddy/Caddyfile
+COPY --from=builder /app/frontend/dist /srv
+COPY frontend/Caddyfile /etc/caddy/Caddyfile
