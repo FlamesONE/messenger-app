@@ -280,7 +280,6 @@
 
 /* ── Chat ambient glow ── */
 .chat-surface {
-	position: relative;
 	isolation: isolate;
 }
 .chat-surface::before {

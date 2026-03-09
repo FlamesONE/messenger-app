@@ -432,7 +432,7 @@ export const MessageInput = memo(function MessageInput({ onCreatePendingChat, me
 				<FilePreviewGrid files={files} onRemove={removeFile} />
 			)}
 
-			<form onSubmit={handleSubmit} className="flex items-end gap-1 px-2 pt-2">
+			<form onSubmit={handleSubmit} className="flex items-end gap-1 px-2 pt-2 pb-2 lg:pb-0">
 				<input
 					ref={fileInputRef}
 					type="file"
