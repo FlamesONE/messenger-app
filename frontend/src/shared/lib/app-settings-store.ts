@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { isTauri } from "./platform";
 
-const DEFAULT_SERVER_URL = isTauri ? "http://localhost:3000" : "";
+const DEFAULT_SERVER_URL = isTauri ? "https://fasty.flute-cms.com" : "";
 
 interface AppSettingsState {
 	notificationsEnabled: boolean;
