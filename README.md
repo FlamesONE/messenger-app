@@ -9,6 +9,10 @@
   Монорепо с отдельным <b>backend</b> и <b>frontend</b> для масштабируемости.
 </p>
 
+<p align="center">
+  <a href="https://fasty.flute-cms.com"><b>🌐 Демо — fasty.flute-cms.com</b></a>
+</p>
+
 ---
 
 ## Быстрый старт (Docker)
