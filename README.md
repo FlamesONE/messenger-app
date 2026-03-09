@@ -397,6 +397,27 @@ Frontend реализован достаточно просто.
 
 ---
 
+## Десктоп и Android (Tauri)
+
+Ради эксперимента реализована обёртка на [Tauri](https://v2.tauri.app) — тот же фронтенд упаковывается в нативное приложение для **Windows**, **macOS** и **Android**.
+
+- **Windows** — `.exe` / `.msi`
+- **macOS** — `.dmg` / `.app`
+- **Android** — `.apk`
+
+Сборка происходит автоматически через GitHub Actions при создании тега `v*`. Готовые артефакты прикрепляются к [GitHub Release](../../releases).
+
+Для локальной сборки:
+
+```bash
+cd frontend
+bun install
+bunx tauri build          # десктоп
+bunx tauri android build  # android (нужен Android SDK + NDK)
+```
+
+---
+
 ## Docker-сервисы
 
 Полный стек поднимается через `docker compose up -d`:
