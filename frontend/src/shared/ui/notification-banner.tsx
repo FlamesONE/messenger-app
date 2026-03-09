@@ -18,7 +18,6 @@ export function NotificationBanner() {
 
 	useEffect(() => {
 		if (dismissed) return;
-
 		if (!("Notification" in window)) return;
 
 		const perm = Notification.permission;
@@ -27,10 +26,26 @@ export function NotificationBanner() {
 			if (notificationsEnabled) return;
 		}
 
+		// Auto-request permission on mount
+		if (perm === "default") {
+			requestNotificationPermission().then((ok) => {
+				if (ok) {
+					setNotificationsEnabled(true);
+					setGranted(true);
+					setDismissed(true);
+					return;
+				}
+				// If denied or dismissed, show banner
+				setMounted(true);
+				setTimeout(() => setVisible(true), 150);
+			});
+			return;
+		}
+
 		setMounted(true);
 		const timer = setTimeout(() => setVisible(true), 150);
 		return () => clearTimeout(timer);
-	}, [dismissed, notificationsEnabled]);
+	}, [dismissed, notificationsEnabled, setNotificationsEnabled, setDismissed]);
 
 	const handleDismiss = useCallback(() => {
 		setVisible(false);
