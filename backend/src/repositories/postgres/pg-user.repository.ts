@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, ilike, or } from "drizzle-orm";
 import type {
 	CreateUserData,
 	IUserRepository,
@@ -28,6 +28,17 @@ export class PgUserRepository implements IUserRepository {
 			where: eq(users.username, username),
 		});
 		return row ?? null;
+	}
+
+	async search(query: string, limit = 20): Promise<UserRecord[]> {
+		const pattern = `%${query}%`;
+		return db.query.users.findMany({
+			where: or(
+				ilike(users.username, pattern),
+				ilike(users.displayName, pattern),
+			),
+			limit,
+		});
 	}
 
 	async create(data: CreateUserData): Promise<UserRecord> {

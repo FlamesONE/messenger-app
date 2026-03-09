@@ -44,6 +44,10 @@ export class CachedUserRepository implements IUserRepository {
 		return user;
 	}
 
+	async search(query: string, limit?: number): Promise<UserRecord[]> {
+		return this.pgUserRepo.search(query, limit);
+	}
+
 	async create(data: CreateUserData): Promise<UserRecord> {
 		const user = await this.pgUserRepo.create(data);
 		await this.cacheService.set(`user:${user.id}`, user, TTL);

@@ -5,7 +5,14 @@ export interface WsEventMap {
 		senderId: string;
 		content: string;
 		media: { url: string; type: string; name: string }[];
+		replyTo: string | null;
 		createdAt: string;
+	};
+	"message:edited": {
+		chatId: string;
+		messageId: string;
+		content: string;
+		editedAt: string;
 	};
 	"message:deleted": {
 		chatId: string;
@@ -45,7 +52,21 @@ export interface WsEventMap {
 		chatId: string;
 		messageId: string;
 		senderName: string;
+		senderAvatar: string | null;
 		content: string;
+	};
+	"message:reaction": {
+		chatId: string;
+		messageId: string;
+		userId: string;
+		emoji: string;
+		action: "added" | "removed";
+	};
+	"user:updated": {
+		userId: string;
+		displayName: string;
+		avatarUrl: string | null;
+		username: string;
 	};
 }
 

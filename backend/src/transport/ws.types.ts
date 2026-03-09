@@ -19,6 +19,10 @@ export interface IWsManager {
 	leave(chatId: string, ws: IWsSocket): void;
 	removeFromAll(ws: IWsSocket): void;
 	broadcastToChat(chatId: string, message: WsMessage): void;
+	broadcastToChatExcept(chatId: string, excludeUserId: string, message: WsMessage): void;
 	broadcastToUser(userId: string, message: WsMessage): void;
 	isUserOnline(userId: string): boolean;
+	getUserSocketCount(userId: string): number;
+	broadcastPresenceToRooms(userId: string, status: "online" | "offline"): void;
+	getOnlineUserIdsInChat(chatId: string): string[];
 }

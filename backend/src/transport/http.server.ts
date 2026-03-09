@@ -3,22 +3,21 @@ import { openapi } from "@elysiajs/openapi";
 import { Elysia } from "elysia";
 import { env } from "@/shared/config/env";
 import { mapErrorToResponse } from "./error-mapper";
-import { globalRateLimit } from "./rate-limit";
 
 export function createHttpServer() {
 	const origins = env.CORS_ORIGIN.split(",").map((o) => o.trim());
+	const isDev = env.NODE_ENV === "development";
 
 	return new Elysia({ name: "http-server" })
 		.use(
 			cors({
-				origin: origins,
+				origin: isDev ? true : origins,
 				methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 				allowedHeaders: ["Content-Type", "Authorization", "X-Request-ID"],
 				credentials: true,
 				maxAge: 86400,
 			}),
 		)
-		.use(globalRateLimit)
 		.use(openapi())
 		.get("/health", () => ({ status: "ok" }))
 		.onBeforeHandle(({ set }) => {

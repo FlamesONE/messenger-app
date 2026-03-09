@@ -20,7 +20,18 @@ export async function runScyllaMigrations(client: Client): Promise<void> {
 			.filter(Boolean);
 
 		for (const stmt of statements) {
-			await client.execute(stmt);
+			try {
+				await client.execute(stmt);
+			} catch (err: unknown) {
+				const msg = err instanceof Error ? err.message : String(err);
+				const isAlreadyExists =
+					msg.includes("already exist") ||
+					msg.includes("conflicts with an existing") ||
+					msg.includes("Invalid column name") ||
+					msg.includes("already exists");
+				if (!isAlreadyExists) throw err;
+				logger.debug({ migration: file, statement: stmt.slice(0, 80) }, "Skipped (already applied)");
+			}
 		}
 
 		logger.debug({ migration: file }, "ScyllaDB migration applied");

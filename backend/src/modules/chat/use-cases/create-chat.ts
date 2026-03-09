@@ -7,6 +7,12 @@ export class CreateChatUseCase {
 	async execute(createdById: string, dto: CreateChatDto) {
 		const allMemberIds = [...new Set([createdById, ...dto.memberIds])];
 
+		if (!dto.isGroup && allMemberIds.length === 2) {
+			const otherId = allMemberIds.find((id) => id !== createdById)!;
+			const existing = await this.chatRepo.findDmBetween(createdById, otherId);
+			if (existing) return existing;
+		}
+
 		return this.chatRepo.create({
 			name: dto.name,
 			isGroup: dto.isGroup,

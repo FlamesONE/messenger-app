@@ -29,20 +29,22 @@ export class SendMessageUseCase {
 		let media: MediaAttachment[] = [];
 		if (dto.mediaKeys && dto.mediaKeys.length > 0) {
 			media = dto.mediaKeys.map((key) => {
+				const meta = this.fileStorage.getMeta(key);
+				if (meta) {
+					return {
+						url: this.fileStorage.getUrl(key),
+						key,
+						type: meta.type,
+						size: meta.size,
+						name: meta.name,
+					};
+				}
 				const ext = key.split(".").pop() ?? "bin";
-				const mimeMap: Record<string, string> = {
-					jpg: "image/jpeg",
-					jpeg: "image/jpeg",
-					png: "image/png",
-					webp: "image/webp",
-					gif: "image/gif",
-					pdf: "application/pdf",
-				};
 				return {
 					url: this.fileStorage.getUrl(key),
 					key,
-					type: mimeMap[ext.toLowerCase()] ?? `application/${ext}`,
-					size: 0, // TODO: store upload metadata to retrieve actual size
+					type: `application/${ext}`,
+					size: 0,
 					name: key.split("/").pop() ?? key,
 				};
 			});
@@ -53,6 +55,7 @@ export class SendMessageUseCase {
 			senderId,
 			content: dto.content,
 			media,
+			replyTo: dto.replyTo,
 		});
 	}
 }

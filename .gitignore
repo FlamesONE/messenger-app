@@ -46,3 +46,8 @@ Thumbs.db
 .agents/
 skills-lock.json
 .playwright-mcp/
+
+# Tauri
+frontend/src-tauri/target/
+frontend/src-tauri/gen/
+frontend/src-tauri/.cargo/

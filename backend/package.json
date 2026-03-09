@@ -21,7 +21,6 @@
     "@types/bcrypt": "^6.0.0",
     "@types/node": "^25.3.5",
     "@types/pg": "^8.18.0",
-    "awilix": "^13.0.3",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.70.4",
     "cassandra-driver": "^4.8.0",

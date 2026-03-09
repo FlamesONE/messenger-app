@@ -25,6 +25,7 @@ export interface IUserRepository {
 	findById(id: string): Promise<UserRecord | null>;
 	findByEmail(email: string): Promise<UserRecord | null>;
 	findByUsername(username: string): Promise<UserRecord | null>;
+	search(query: string, limit?: number): Promise<UserRecord[]>;
 	create(data: CreateUserData): Promise<UserRecord>;
 	update(id: string, data: UpdateUserData): Promise<UserRecord | null>;
 }

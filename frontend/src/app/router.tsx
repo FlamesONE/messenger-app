@@ -1,8 +1,9 @@
-import { Loader2 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { AuthGuard } from "./AuthGuard";
 import { GuestGuard } from "./GuestGuard";
+import { PageLoader } from "@/shared/ui/page-loader";
+import { MessengerSkeleton } from "@/shared/ui/messenger-skeleton";
 
 const MessengerPage = lazy(() =>
 	import("@/pages/messenger/MessengerPage").then((m) => ({ default: m.MessengerPage })),
@@ -13,25 +14,26 @@ const LoginPage = lazy(() =>
 const RegisterPage = lazy(() =>
 	import("@/pages/auth/RegisterPage").then((m) => ({ default: m.RegisterPage })),
 );
+const JoinPage = lazy(() =>
+	import("@/pages/join/JoinPage").then((m) => ({ default: m.JoinPage })),
+);
 
-function PageLoader() {
-	return (
-		<div className="flex h-screen items-center justify-center bg-background">
-			<Loader2 className="size-6 animate-spin text-primary" />
-		</div>
-	);
-}
+const messengerElement = (
+	<AuthGuard>
+		<Suspense fallback={<MessengerSkeleton />}>
+			<MessengerPage />
+		</Suspense>
+	</AuthGuard>
+);
 
 export const router = createBrowserRouter([
 	{
 		path: "/",
-		element: (
-			<AuthGuard>
-				<Suspense fallback={<PageLoader />}>
-					<MessengerPage />
-				</Suspense>
-			</AuthGuard>
-		),
+		element: messengerElement,
+	},
+	{
+		path: "/chat/:chatId",
+		element: messengerElement,
 	},
 	{
 		path: "/login",
@@ -51,6 +53,16 @@ export const router = createBrowserRouter([
 					<RegisterPage />
 				</Suspense>
 			</GuestGuard>
+		),
+	},
+	{
+		path: "/join/:inviteCode",
+		element: (
+			<AuthGuard>
+				<Suspense fallback={<PageLoader />}>
+					<JoinPage />
+				</Suspense>
+			</AuthGuard>
 		),
 	},
 	{

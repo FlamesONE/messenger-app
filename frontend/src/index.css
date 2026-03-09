@@ -5,123 +5,179 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* ── Telegram-inspired color palette ── */
-
+/* ── Light theme: dark sidebar on light bg ── */
 :root {
-	--background: #ffffff;
-	--foreground: #000000;
+	/* Root reference (for mobile panel reset) */
+	--bg-root: #f0f0f0;
+	--fg-root: #111111;
+	--card-root: #ffffff;
+	--secondary-root: #e8e8e8;
+	--muted-fg-root: #777777;
+	--border-root: #ddd;
+
+	--background: #f0f0f0;
+	--foreground: #111111;
 	--card: #ffffff;
-	--card-foreground: #000000;
+	--card-foreground: #111111;
 	--popover: #ffffff;
-	--popover-foreground: #000000;
-	--primary: #3390ec;
+	--popover-foreground: #111111;
+	--primary: #2563eb;
 	--primary-foreground: #ffffff;
-	--secondary: #f0f2f5;
-	--secondary-foreground: #232e3c;
-	--muted: #f0f2f5;
-	--muted-foreground: #707579;
-	--accent: #e3f2fd;
-	--accent-foreground: #232e3c;
-	--destructive: #e53935;
-	--border: #e0e0e0;
-	--input: #e0e0e0;
-	--ring: #3390ec;
-	--radius: 0.625rem;
+	--secondary: #e8e8e8;
+	--secondary-foreground: #111111;
+	--muted: #e8e8e8;
+	--muted-foreground: #777777;
+	--accent: #e8e8e8;
+	--accent-foreground: #111111;
+	--destructive: #ef4444;
+	--border: #ddd;
+	--input: #ddd;
+	--ring: #2563eb;
+	--radius: 0.75rem;
 
-	--tg-bubble-out: #effdde;
-	--tg-bubble-in: #ffffff;
-	--tg-sidebar: #ffffff;
-	--tg-sidebar-active: #3390ec;
-	--tg-chat-bg: #e6ebee;
+	/* Sidebar panel — dark in light mode */
+	--panel: #111111;
+	--panel-foreground: #e8e8e8;
+	--panel-secondary: #1e1e1e;
+	--panel-muted: #555555;
+	--panel-border: rgba(255,255,255,0.08);
+	--panel-active: #e8e8e8;
+	--panel-active-foreground: #111111;
 
-	--sidebar: #ffffff;
-	--sidebar-foreground: #000000;
-	--sidebar-primary: #3390ec;
-	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: #e3f2fd;
-	--sidebar-accent-foreground: #232e3c;
-	--sidebar-border: #e0e0e0;
-	--sidebar-ring: #3390ec;
+	/* Chat surface */
+	--surface: #f0f0f0;
+	--surface-elevated: #ffffff;
+	--surface-border: #e0e0e0;
+	--surface-muted: #999999;
+
+	/* Incoming bubbles */
+	--bubble-in: #f0f0f0;
+	--bubble-in-foreground: #111111;
+	--bubble-in-border: #e0e0e0;
+
+	/* Sidebar shadcn overrides */
+	--sidebar: var(--panel);
+	--sidebar-foreground: var(--panel-foreground);
+	--sidebar-primary: var(--panel-active);
+	--sidebar-primary-foreground: var(--panel-active-foreground);
+	--sidebar-accent: var(--panel-secondary);
+	--sidebar-accent-foreground: var(--panel-foreground);
+	--sidebar-border: var(--panel-border);
+	--sidebar-ring: #2563eb;
 }
 
+/* ── Dark theme: white sidebar on dark bg ── */
 .dark {
-	--background: #0e1621;
-	--foreground: #f5f5f5;
-	--card: #17212b;
-	--card-foreground: #f5f5f5;
-	--popover: #1d2a36;
-	--popover-foreground: #f5f5f5;
-	--primary: #3390ec;
+	--bg-root: #0a0a0a;
+	--fg-root: #e4e7ec;
+	--card-root: #141414;
+	--secondary-root: #1a1a1a;
+	--muted-fg-root: #666666;
+	--border-root: rgba(255,255,255,0.06);
+
+	--background: #0a0a0a;
+	--foreground: #e4e7ec;
+	--card: #ffffff;
+	--card-foreground: #0a0a0a;
+	--popover: #ffffff;
+	--popover-foreground: #0a0a0a;
+	--primary: #2563eb;
 	--primary-foreground: #ffffff;
-	--secondary: #1d2a36;
-	--secondary-foreground: #f5f5f5;
-	--muted: #1d2a36;
-	--muted-foreground: #6d7f8f;
-	--accent: #1d2a36;
-	--accent-foreground: #f5f5f5;
-	--destructive: #e53935;
-	--border: rgba(255, 255, 255, 0.08);
-	--input: rgba(255, 255, 255, 0.1);
-	--ring: #3390ec;
+	--secondary: #f0f0f0;
+	--secondary-foreground: #0a0a0a;
+	--muted: #f5f5f5;
+	--muted-foreground: #777777;
+	--accent: #f0f0f0;
+	--accent-foreground: #0a0a0a;
+	--destructive: #ef4444;
+	--border: #e5e5e5;
+	--input: #e5e5e5;
+	--ring: #2563eb;
 
-	--tg-bubble-out: #2b5278;
-	--tg-bubble-in: #182533;
-	--tg-sidebar: #17212b;
-	--tg-sidebar-active: #2b5278;
-	--tg-chat-bg: #0e1621;
+	/* Sidebar panel — white in dark mode */
+	--panel: #ffffff;
+	--panel-foreground: #0a0a0a;
+	--panel-secondary: #f0f0f0;
+	--panel-muted: #777777;
+	--panel-border: #e5e5e5;
+	--panel-active: #0a0a0a;
+	--panel-active-foreground: #ffffff;
 
-	--sidebar: #17212b;
-	--sidebar-foreground: #f5f5f5;
-	--sidebar-primary: #3390ec;
-	--sidebar-primary-foreground: #ffffff;
-	--sidebar-accent: #2b5278;
-	--sidebar-accent-foreground: #f5f5f5;
-	--sidebar-border: rgba(255, 255, 255, 0.08);
-	--sidebar-ring: #3390ec;
+	/* Chat surface */
+	--surface: #0a0a0a;
+	--surface-elevated: #141414;
+	--surface-border: rgba(255,255,255,0.06);
+	--surface-muted: #666666;
+
+	/* Incoming bubbles */
+	--bubble-in: #1e1e1e;
+	--bubble-in-foreground: #e0e0e0;
+	--bubble-in-border: rgba(255,255,255,0.06);
+
+	/* Sidebar shadcn overrides */
+	--sidebar: var(--panel);
+	--sidebar-foreground: var(--panel-foreground);
+	--sidebar-primary: var(--panel-active);
+	--sidebar-primary-foreground: var(--panel-active-foreground);
+	--sidebar-accent: var(--panel-secondary);
+	--sidebar-accent-foreground: var(--panel-foreground);
+	--sidebar-border: var(--panel-border);
+	--sidebar-ring: #2563eb;
 }
 
 @theme inline {
-    --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
 
-    --color-tg-bubble-out: var(--tg-bubble-out);
-    --color-tg-bubble-in: var(--tg-bubble-in);
-    --color-tg-sidebar: var(--tg-sidebar);
-    --color-tg-sidebar-active: var(--tg-sidebar-active);
-    --color-tg-chat-bg: var(--tg-chat-bg);
+	/* Custom design tokens */
+	--color-panel: var(--panel);
+	--color-panel-foreground: var(--panel-foreground);
+	--color-panel-secondary: var(--panel-secondary);
+	--color-panel-muted: var(--panel-muted);
+	--color-panel-border: var(--panel-border);
+	--color-panel-active: var(--panel-active);
+	--color-panel-active-foreground: var(--panel-active-foreground);
+	--color-surface: var(--surface);
+	--color-surface-elevated: var(--surface-elevated);
+	--color-surface-border: var(--surface-border);
+	--color-surface-muted: var(--surface-muted);
+	--color-bubble-in: var(--bubble-in);
+	--color-bubble-in-foreground: var(--bubble-in-foreground);
+	--color-bubble-in-border: var(--bubble-in-border);
 
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
-    --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) + 4px);
-    --radius-2xl: calc(var(--radius) + 8px);
-    --radius-3xl: calc(var(--radius) + 12px);
-    --radius-4xl: calc(var(--radius) + 16px);
+	/* Standard shadcn tokens */
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar: var(--sidebar);
+	--color-ring: var(--ring);
+	--color-input: var(--input);
+	--color-border: var(--border);
+	--color-destructive: var(--destructive);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-accent: var(--accent);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted: var(--muted);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-secondary: var(--secondary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: var(--primary);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-popover: var(--popover);
+	--color-card-foreground: var(--card-foreground);
+	--color-card: var(--card);
+	--color-foreground: var(--foreground);
+	--color-background: var(--background);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+	--radius-2xl: calc(var(--radius) + 8px);
+	--radius-3xl: calc(var(--radius) + 12px);
+	--radius-4xl: calc(var(--radius) + 16px);
 }
 
 @layer base {
@@ -134,27 +190,228 @@
 	html {
 		@apply font-sans;
 	}
+	button, [role="button"], a, select, label[for],
+	input[type="checkbox"], input[type="radio"],
+	input[type="submit"], input[type="button"], summary {
+		cursor: pointer;
+	}
 }
 
-/* ── Telegram-style scrollbar ── */
+/* ── Scrollbar ── */
 @layer base {
-	::-webkit-scrollbar {
-		width: 5px;
+	::-webkit-scrollbar { width: 5px; }
+	::-webkit-scrollbar-track { background: transparent; }
+	::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.3); border-radius: 10px; }
+	::-webkit-scrollbar-thumb:hover { background: rgba(128,128,128,0.5); }
+}
+
+/* ── Panel surface — overrides shadcn vars for sidebar context ── */
+.panel-surface,
+.panel-surface-portal {
+	--background: var(--panel);
+	--foreground: var(--panel-foreground);
+	--card: var(--panel);
+	--card-foreground: var(--panel-foreground);
+	--popover: var(--panel);
+	--popover-foreground: var(--panel-foreground);
+	--secondary: var(--panel-secondary);
+	--secondary-foreground: var(--panel-foreground);
+	--muted: var(--panel-secondary);
+	--muted-foreground: var(--panel-muted);
+	--border: var(--panel-border);
+	--input: var(--panel-border);
+	--accent: var(--panel-secondary);
+	--accent-foreground: var(--panel-foreground);
+	--destructive: #ef4444;
+	--ring: #2563eb;
+	background-color: var(--panel);
+	color: var(--panel-foreground);
+}
+
+/* ── Sidebar normal — non-inverted, matches main theme ── */
+.sidebar-normal,
+.sidebar-normal-portal {
+	--panel: var(--card-root);
+	--panel-foreground: var(--fg-root);
+	--panel-secondary: var(--secondary-root);
+	--panel-muted: var(--muted-fg-root);
+	--panel-border: var(--border-root);
+	--panel-active: var(--primary);
+	--panel-active-foreground: var(--primary-foreground);
+
+	--background: var(--card-root);
+	--foreground: var(--fg-root);
+	--card: var(--card-root);
+	--card-foreground: var(--fg-root);
+	--popover: var(--card-root);
+	--popover-foreground: var(--fg-root);
+	--secondary: var(--secondary-root);
+	--secondary-foreground: var(--fg-root);
+	--muted: var(--secondary-root);
+	--muted-foreground: var(--muted-fg-root);
+	--accent: var(--secondary-root);
+	--accent-foreground: var(--fg-root);
+	--border: var(--border-root);
+	--input: var(--border-root);
+	background-color: var(--card-root);
+	color: var(--fg-root);
+}
+
+/* ── Chat surface — overrides for chat context ── */
+.chat-surface,
+.chat-surface-portal {
+	--background: var(--surface);
+	--foreground: var(--foreground);
+	--card: var(--surface-elevated);
+	--card-foreground: var(--foreground);
+	--popover: var(--surface-elevated);
+	--popover-foreground: var(--foreground);
+	--secondary: var(--surface-elevated);
+	--secondary-foreground: var(--foreground);
+	--muted: var(--surface-elevated);
+	--muted-foreground: var(--surface-muted);
+	--border: var(--surface-border);
+	--input: var(--surface-border);
+	--accent: var(--surface-elevated);
+	--accent-foreground: var(--foreground);
+	background-color: var(--surface);
+	color: var(--foreground);
+}
+
+/* ── Chat ambient glow ── */
+.chat-surface {
+	position: relative;
+	isolation: isolate;
+}
+.chat-surface::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	pointer-events: none;
+	z-index: -1;
+	opacity: 0.5;
+	background:
+		radial-gradient(ellipse 50% 40% at 15% 85%, rgba(37, 99, 235, 0.10) 0%, transparent 70%),
+		radial-gradient(ellipse 45% 50% at 85% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 70%),
+		radial-gradient(ellipse 60% 35% at 50% 50%, rgba(37, 99, 235, 0.04) 0%, transparent 60%);
+	animation: chat-glow-drift 25s ease-in-out infinite alternate;
+}
+@keyframes chat-glow-drift {
+	0%   { background-position: 0% 0%, 100% 0%, 50% 50%; }
+	50%  { background-position: 10% 10%, 90% 10%, 40% 60%; }
+	100% { background-position: 5% 5%, 95% 15%, 55% 45%; }
+}
+
+/* ── Autofill override ── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+	-webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+	-webkit-text-fill-color: inherit !important;
+	transition: background-color 5000s ease-in-out 0s;
+}
+.auth-form-panel input:-webkit-autofill,
+.auth-form-panel input:-webkit-autofill:hover,
+.auth-form-panel input:-webkit-autofill:focus {
+	-webkit-box-shadow: 0 0 0 1000px #fafafa inset !important;
+	-webkit-text-fill-color: #111111 !important;
+}
+
+/* ── Auth form panel — always light ── */
+.auth-form-panel {
+	--background: #fafafa;
+	--foreground: #111111;
+	--card: #ffffff;
+	--card-foreground: #111111;
+	--popover: #ffffff;
+	--popover-foreground: #111111;
+	--muted: #f1f3f5;
+	--muted-foreground: #64748b;
+	--border: #e5e7eb;
+	--input: #e5e7eb;
+	--destructive: #dc2626;
+	background-color: #fafafa;
+	color: #111111;
+}
+
+/* ── Mobile: remove surface styling, match theme ── */
+@media (max-width: 1023px) {
+	:root {
+		--panel: var(--bg-root);
+		--panel-foreground: var(--fg-root);
+		--panel-secondary: var(--secondary-root);
+		--panel-muted: var(--muted-fg-root);
+		--panel-border: var(--border-root);
+		--panel-active: var(--primary);
+		--panel-active-foreground: var(--primary-foreground);
 	}
-	::-webkit-scrollbar-track {
-		background: transparent;
+
+	.panel-surface {
+		--background: var(--bg-root);
+		--foreground: var(--fg-root);
+		--card: var(--card-root);
+		--card-foreground: var(--fg-root);
+		--popover: var(--card-root);
+		--popover-foreground: var(--fg-root);
+		--secondary: var(--secondary-root);
+		--secondary-foreground: var(--fg-root);
+		--muted: var(--secondary-root);
+		--muted-foreground: var(--muted-fg-root);
+		--border: var(--border-root);
+		--input: var(--border-root);
+		--accent: var(--secondary-root);
+		--accent-foreground: var(--fg-root);
+		background-color: var(--bg-root);
+		color: var(--fg-root);
+		border-radius: 0;
 	}
-	::-webkit-scrollbar-thumb {
-		background: rgba(128, 128, 128, 0.3);
-		border-radius: 10px;
+
+	.chat-surface {
+		background-color: var(--bg-root);
 	}
-	::-webkit-scrollbar-thumb:hover {
-		background: rgba(128, 128, 128, 0.5);
+	.chat-surface::before {
+		opacity: 0.35;
 	}
 }
 
-/* ── Chat background pattern ── */
-.chat-bg-pattern {
-	background-color: var(--tg-chat-bg);
-	background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23808080' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+/* ── Utilities ── */
+@layer utilities {
+	.transition-smooth {
+		transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+}
+
+/* ── Shimmer skeleton ── */
+.shimmer {
+	background: linear-gradient(
+		90deg,
+		var(--surface-elevated, #e0e0e0) 25%,
+		var(--surface-border, #ccc) 50%,
+		var(--surface-elevated, #e0e0e0) 75%
+	);
+	background-size: 200% 100%;
+	animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-shimmer {
+	background: linear-gradient(
+		105deg,
+		var(--muted) 0%,
+		var(--muted) 40%,
+		var(--border) 50%,
+		var(--muted) 60%,
+		var(--muted) 100%
+	);
+	background-size: 250% 100%;
+	animation: skeleton-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+	0% { background-position: 200% 0; }
+	100% { background-position: -50% 0; }
+}
+
+@keyframes shimmer {
+	0% { background-position: 200% 0; }
+	100% { background-position: -200% 0; }
 }

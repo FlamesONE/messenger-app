@@ -1,145 +1,199 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, User, Users, X } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { Loader2, X } from "lucide-react";
+import { memo, useCallback, useMemo, useState } from "react";
+import { showError, showWarning } from "@/shared/ui/custom-toast";
 import { useChatStore, useCreateChat } from "@/entities/chat";
-import type { CreateChatFormData } from "@/shared/lib/validation/chat";
-import { createChatSchema } from "@/shared/lib/validation/chat";
+import type { User as UserType } from "@/entities/user";
+import { useAuthStore, useSearchUsers } from "@/entities/user";
+import { useDebounce } from "@uidotdev/usehooks";
+import { ChatAvatar } from "@/shared/ui/chat-avatar";
 import { Button } from "@/shared/ui/components/ui/button";
 import { Input } from "@/shared/ui/components/ui/input";
-import { Label } from "@/shared/ui/components/ui/label";
+import { ErrorAlert } from "@/shared/ui/error-alert";
+import { AppDrawer } from "@/shared/ui/app-drawer";
+import { ChooseStep } from "./ChooseStep";
+import { SearchStep } from "./SearchStep";
+import type { NewChatStep } from "./ChooseStep";
 
 interface Props {
 	open: boolean;
 	onClose: () => void;
 }
 
-export function NewChatDialog({ open, onClose }: Props) {
+export const NewChatDialog = memo(function NewChatDialog({ open, onClose }: Props) {
+	const setPendingDmUser = useChatStore((s) => s.setPendingDmUser);
 	const setActiveChat = useChatStore((s) => s.setActiveChat);
 	const createChat = useCreateChat();
+	const currentUserId = useAuthStore((s) => s.user?.id);
 
-	const {
-		register,
-		handleSubmit,
-		watch,
-		setValue,
-		reset,
-		formState: { errors },
-	} = useForm<CreateChatFormData>({
-		resolver: zodResolver(createChatSchema),
-		defaultValues: { isGroup: false, memberIds: "", groupName: "" },
-	});
+	const [step, setStep] = useState<NewChatStep>("choose");
+	const [groupName, setGroupName] = useState("");
+	const [searchQuery, setSearchQuery] = useState("");
+	const [selectedUsers, setSelectedUsers] = useState<UserType[]>([]);
 
-	const isGroup = watch("isGroup");
+	const debouncedSearch = useDebounce(searchQuery, 300);
+	const { data: searchResults = [], isLoading: isSearching } = useSearchUsers(
+		step !== "choose" ? debouncedSearch : "",
+	);
 
-	const onSubmit = handleSubmit(async (data) => {
-		const memberIds = data.memberIds
-			.split(",")
-			.map((s) => s.trim())
-			.filter(Boolean);
+	const filteredResults = useMemo(() => {
+		return searchResults.filter(
+			(u) => u.id !== currentUserId && !selectedUsers.some((s) => s.id === u.id),
+		);
+	}, [searchResults, currentUserId, selectedUsers]);
 
+	const reset = useCallback(() => {
+		setStep("choose");
+		setGroupName("");
+		setSearchQuery("");
+		setSelectedUsers([]);
+	}, []);
+
+	const handleSelectUserPersonal = useCallback(
+		(user: UserType) => {
+			setPendingDmUser(user);
+			onClose();
+			reset();
+		},
+		[setPendingDmUser, onClose, reset],
+	);
+
+	const handleSelectUserGroup = useCallback(
+		(user: UserType) => {
+			setSelectedUsers((prev) => [...prev, user]);
+			setSearchQuery("");
+		},
+		[],
+	);
+
+	const handleRemoveUser = useCallback((userId: string) => {
+		setSelectedUsers((prev) => prev.filter((u) => u.id !== userId));
+	}, []);
+
+	const handleCreateGroup = useCallback(async () => {
+		if (selectedUsers.length === 0) {
+			showWarning("Добавьте хотя бы одного участника");
+			return;
+		}
 		try {
 			const chat = await createChat.mutateAsync({
-				name: data.isGroup ? data.groupName || undefined : undefined,
-				isGroup: data.isGroup,
-				memberIds,
+				name: groupName || undefined,
+				isGroup: true,
+				memberIds: selectedUsers.map((u) => u.id),
 			});
 			setActiveChat(chat.id);
 			onClose();
 			reset();
 		} catch {
-			// error is in createChat.error
+			showError("Не удалось создать группу");
 		}
-	});
+	}, [selectedUsers, groupName, createChat, setActiveChat, onClose, reset]);
 
-	if (!open) return null;
+	const handleOpenChange = useCallback(
+		(v: boolean) => {
+			if (!v) {
+				onClose();
+				reset();
+			}
+		},
+		[onClose, reset],
+	);
+
+	const handleBack = useCallback(() => {
+		if (step !== "choose") {
+			setStep("choose");
+			setSearchQuery("");
+			setSelectedUsers([]);
+			setGroupName("");
+		}
+	}, [step]);
+
+	const title = step === "choose"
+		? "Новый чат"
+		: step === "personal"
+			? "Личное сообщение"
+			: "Новая группа";
 
 	return (
-		// biome-ignore lint/a11y/noStaticElementInteractions: backdrop overlay
-		<div
-			role="presentation"
-			className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 animate-in fade-in"
-			onClick={onClose}
-			onKeyDown={(e) => e.key === "Escape" && onClose()}
-		>
-			{/* biome-ignore lint/a11y/noStaticElementInteractions: stop propagation on dialog */}
-			<div
-				role="presentation"
-				className="w-full max-w-sm rounded-xl bg-card p-5 shadow-2xl animate-in zoom-in-95"
-				onClick={(e) => e.stopPropagation()}
-				onKeyDown={(e) => e.stopPropagation()}
-			>
-				<div className="flex items-center justify-between mb-5">
-					<h2 className="text-lg font-semibold">Новый чат</h2>
-					<button
-						type="button"
-						onClick={onClose}
-						className="rounded-full p-1 text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+		<AppDrawer
+			open={open}
+			onOpenChange={handleOpenChange}
+			title={title}
+			variant="panel"
+			onBack={step !== "choose" ? handleBack : undefined}
+			footer={
+				step === "group" ? (
+					<Button
+						onClick={handleCreateGroup}
+						disabled={createChat.isPending || selectedUsers.length === 0}
+						className="w-full h-10 rounded-xl font-medium"
 					>
-						<X className="size-5" />
-					</button>
-				</div>
-
-				<form onSubmit={onSubmit} className="flex flex-col gap-4">
-					{createChat.error && (
-						<div className="rounded-lg bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
-							{createChat.error.message}
-						</div>
-					)}
-
-					<div className="flex gap-2">
-						<button
-							type="button"
-							onClick={() => setValue("isGroup", false)}
-							className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-								!isGroup
-									? "border-primary bg-primary/10 text-primary"
-									: "border-border text-muted-foreground hover:bg-secondary"
-							}`}
-						>
-							<User className="size-4" />
-							Личный
-						</button>
-						<button
-							type="button"
-							onClick={() => setValue("isGroup", true)}
-							className={`flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition-colors ${
-								isGroup
-									? "border-primary bg-primary/10 text-primary"
-									: "border-border text-muted-foreground hover:bg-secondary"
-							}`}
-						>
-							<Users className="size-4" />
-							Группа
-						</button>
-					</div>
-
-					{isGroup && (
-						<div className="flex flex-col gap-1.5">
-							<Label htmlFor="groupName">Название группы</Label>
-							<Input id="groupName" placeholder="Моя группа" {...register("groupName")} />
-						</div>
-					)}
-
-					<div className="flex flex-col gap-1.5">
-						<Label htmlFor="memberIds">
-							{isGroup ? "ID участников (через запятую)" : "ID пользователя"}
-						</Label>
-						<Input id="memberIds" placeholder="Введите ID" {...register("memberIds")} />
-						{errors.memberIds && (
-							<p className="text-xs text-destructive">{errors.memberIds.message}</p>
+						{createChat.isPending ? (
+							<Loader2 className="size-4 animate-spin" />
+						) : (
+							`Создать группу${selectedUsers.length > 0 ? ` · ${selectedUsers.length}` : ""}`
 						)}
-					</div>
+					</Button>
+				) : undefined
+			}
+		>
+			{step === "choose" && <ChooseStep onChoose={setStep} />}
 
-					<div className="flex gap-2 justify-end pt-1">
-						<Button type="button" variant="ghost" onClick={onClose}>
-							Отмена
-						</Button>
-						<Button type="submit" disabled={createChat.isPending}>
-							{createChat.isPending ? <Loader2 className="size-4 animate-spin" /> : "Создать"}
-						</Button>
-					</div>
-				</form>
-			</div>
-		</div>
+			{step === "personal" && (
+				<SearchStep
+					searchQuery={searchQuery}
+					onSearchChange={setSearchQuery}
+					isSearching={isSearching}
+					results={filteredResults}
+					placeholder="Имя или @username..."
+					emptyHint="Начните вводить для поиска"
+					onSelect={handleSelectUserPersonal}
+				/>
+			)}
+
+			{step === "group" && (
+				<div className="flex flex-col gap-4">
+					<ErrorAlert error={createChat.error} />
+
+					<Input
+						placeholder="Название группы (необязательно)"
+						value={groupName}
+						onChange={(e) => setGroupName(e.target.value)}
+						className="rounded-xl"
+					/>
+
+					{selectedUsers.length > 0 && (
+						<div className="flex flex-wrap gap-1.5">
+							{selectedUsers.map((u) => (
+								<span
+									key={u.id}
+									className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 pl-1 pr-2 py-0.5 text-xs font-medium text-primary"
+								>
+									<ChatAvatar name={u.displayName} avatarUrl={u.avatarUrl} size="sm" />
+									<span className="truncate max-w-[100px]">{u.displayName}</span>
+									<button
+										type="button"
+										onClick={() => handleRemoveUser(u.id)}
+										className="ml-0.5 rounded-full p-0.5 transition-colors hover:bg-primary/25"
+									>
+										<X className="size-3" />
+									</button>
+								</span>
+							))}
+						</div>
+					)}
+
+					<SearchStep
+						searchQuery={searchQuery}
+						onSearchChange={setSearchQuery}
+						isSearching={isSearching}
+						results={filteredResults}
+						placeholder="Добавить участников..."
+						emptyHint="Введите имя или @username"
+						onSelect={handleSelectUserGroup}
+						compact
+					/>
+				</div>
+			)}
+		</AppDrawer>
 	);
-}
+});

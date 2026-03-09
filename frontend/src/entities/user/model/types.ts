@@ -1,8 +1,1 @@
-export interface User {
-	id: string;
-	email: string;
-	username: string;
-	displayName: string;
-	avatarUrl?: string | null;
-	createdAt?: string;
-}
+export type { ApiUser as User } from "@backend/shared/types/api-types";

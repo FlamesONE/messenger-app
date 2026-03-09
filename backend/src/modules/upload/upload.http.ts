@@ -30,7 +30,7 @@ export function uploadHttp(
 			{
 				auth: true,
 				body: t.Object({
-					file: t.File({ maxSize: "10m" }),
+					file: t.File({ maxSize: "50m" }),
 				}),
 			},
 		);

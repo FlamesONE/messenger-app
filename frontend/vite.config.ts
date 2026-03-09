@@ -20,6 +20,10 @@ export default defineConfig({
         target: process.env.VITE_API_TARGET ?? "http://localhost:3000",
         rewrite: (p) => p.replace(/^\/api/, ""),
       },
+      "/ws": {
+        target: process.env.VITE_API_TARGET ?? "http://localhost:3000",
+        ws: true,
+      },
     },
   },
 })

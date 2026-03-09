@@ -16,4 +16,15 @@ export class MarkAsReadUseCase {
 
 		await this.messageRepo.markAsRead(chatId, messageId, userId);
 	}
+
+	async executeBatch(userId: string, chatId: string, messageIds: string[]) {
+		if (messageIds.length === 0) return;
+
+		const isMember = await this.chatRepo.isMember(chatId, userId);
+		if (!isMember) {
+			throw new ForbiddenError("You are not a member of this chat");
+		}
+
+		await this.messageRepo.markAsReadBatch(chatId, messageIds, userId);
+	}
 }

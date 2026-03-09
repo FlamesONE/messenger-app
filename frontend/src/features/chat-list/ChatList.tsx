@@ -1,15 +1,15 @@
 import { MessageSquarePlus } from "lucide-react";
-import { useCallback, useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useChatStore, useChats } from "@/entities/chat";
 import { useAuthStore } from "@/entities/user";
-import { Skeleton } from "@/shared/ui/components/ui/skeleton";
 import { ChatListItem } from "./ChatListItem";
 
 interface ChatListProps {
 	searchQuery: string;
+	filterTab?: 'all' | 'personal' | 'groups';
 }
 
-export function ChatList({ searchQuery }: ChatListProps) {
+export const ChatList = memo(function ChatList({ searchQuery, filterTab }: ChatListProps) {
 	const { data: chats = [], isLoading } = useChats();
 	const activeChatId = useChatStore((s) => s.activeChatId);
 	const setActiveChat = useChatStore((s) => s.setActiveChat);
@@ -19,22 +19,37 @@ export function ChatList({ searchQuery }: ChatListProps) {
 		if (!searchQuery.trim()) return chats;
 		const q = searchQuery.toLowerCase();
 		return chats.filter(
-			(c) => c.name?.toLowerCase().includes(q) || c.lastMessage?.content.toLowerCase().includes(q),
+			(c) =>
+				c.name?.toLowerCase().includes(q) ||
+				c.dmUser?.displayName.toLowerCase().includes(q) ||
+				c.dmUser?.username.toLowerCase().includes(q) ||
+				c.lastMessage?.content.toLowerCase().includes(q),
 		);
 	}, [chats, searchQuery]);
 
-	const handleSelect = useCallback((chatId: string) => setActiveChat(chatId), [setActiveChat]);
+	const tabFiltered = useMemo(() => {
+		if (!filterTab || filterTab === 'all') return filteredChats;
+		if (filterTab === 'personal') return filteredChats.filter(c => !c.isGroup);
+		return filteredChats.filter(c => c.isGroup);
+	}, [filteredChats, filterTab]);
 
 	if (isLoading && chats.length === 0) {
+		const widths = [0.85, 0.65, 0.92, 0.55, 0.78, 0.7, 0.88, 0.6];
 		return (
-			<div className="flex flex-col gap-1 p-2">
-				{Array.from({ length: 6 }).map((_, i) => (
+			<div className="flex flex-col gap-0.5 px-2 py-1">
+				{widths.map((w, i) => (
 					// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton list
-					<div key={i} className="flex items-center gap-3 rounded-lg px-2.5 py-2">
-						<Skeleton className="size-10 shrink-0 rounded-full" />
-						<div className="flex-1 space-y-1.5">
-							<Skeleton className="h-3.5 w-28" />
-							<Skeleton className="h-3 w-40" />
+					<div key={i} className="flex items-center gap-3 rounded-xl px-2.5 py-2.5">
+						<div className="size-10 shrink-0 rounded-full skeleton-shimmer" />
+						<div className="flex-1 min-w-0 space-y-2">
+							<div
+								className="h-3.5 rounded-md skeleton-shimmer"
+								style={{ width: `${w * 60}%` }}
+							/>
+							<div
+								className="h-3 rounded-md skeleton-shimmer"
+								style={{ width: `${w * 85}%` }}
+							/>
 						</div>
 					</div>
 				))}
@@ -42,11 +57,11 @@ export function ChatList({ searchQuery }: ChatListProps) {
 		);
 	}
 
-	if (filteredChats.length === 0) {
+	if (tabFiltered.length === 0) {
 		return (
 			<div className="flex flex-1 flex-col items-center justify-center gap-3 p-8">
-				<MessageSquarePlus className="size-10 text-muted-foreground/40" />
-				<p className="text-sm text-muted-foreground text-center">
+				<MessageSquarePlus className="size-10 text-panel-muted/40" />
+				<p className="text-sm text-panel-muted text-center">
 					{searchQuery ? "Ничего не найдено" : "Пока нет чатов"}
 				</p>
 			</div>
@@ -55,15 +70,15 @@ export function ChatList({ searchQuery }: ChatListProps) {
 
 	return (
 		<div className="flex flex-col gap-0.5 overflow-y-auto px-2 py-1">
-			{filteredChats.map((chat) => (
+			{tabFiltered.map((chat) => (
 				<ChatListItem
 					key={chat.id}
 					chat={chat}
 					isActive={chat.id === activeChatId}
 					currentUserId={userId}
-					onClick={() => handleSelect(chat.id)}
+					onSelect={setActiveChat}
 				/>
 			))}
 		</div>
 	);
-}
+});

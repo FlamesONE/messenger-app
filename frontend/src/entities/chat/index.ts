@@ -1,3 +1,4 @@
-export { chatKeys, useChats, useCreateChat } from "./api";
+export { chatKeys, sortChatsByLastActivity, useAddMember, useChatMembers, useChats, useCreateChat, useDeleteChat, useGenerateInviteLink, useJoinByInvite, useLeaveChat } from "./api";
 export { useChatStore } from "./model/store";
-export type { Chat } from "./model/types";
+export { useStartDm } from "./model/use-start-dm";
+export type { Chat, ChatMember, DmUser } from "./model/types";

@@ -1,6 +1,13 @@
 import { Search, X } from "lucide-react";
-import { memo } from "react";
+import { type ChangeEvent, memo, useCallback } from "react";
 import { cn } from "@/shared/lib/utils";
+import { Button } from "@/shared/ui/components/ui/button";
+import { Tip } from "@/shared/ui/tip";
+import {
+	InputGroup,
+	InputGroupAddon,
+	InputGroupInput,
+} from "@/shared/ui/components/ui/input-group";
 
 interface SearchInputProps {
 	value: string;
@@ -15,25 +22,27 @@ export const SearchInput = memo(function SearchInput({
 	placeholder = "Поиск",
 	className,
 }: SearchInputProps) {
+	const handleChange = useCallback(
+		(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value),
+		[onChange],
+	);
+	const handleClear = useCallback(() => onChange(""), [onChange]);
+
 	return (
-		<div className={cn("relative", className)}>
-			<Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-			<input
-				type="text"
-				value={value}
-				onChange={(e) => onChange(e.target.value)}
-				placeholder={placeholder}
-				className="h-9 w-full rounded-xl bg-secondary pl-9 pr-8 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/30 transition-shadow"
-			/>
+		<InputGroup className={cn("h-9 rounded-full", className)}>
+			<InputGroupAddon align="inline-start">
+				<Search className="size-4" />
+			</InputGroupAddon>
+			<InputGroupInput value={value} onChange={handleChange} placeholder={placeholder} />
 			{value && (
-				<button
-					type="button"
-					onClick={() => onChange("")}
-					className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground"
-				>
-					<X className="size-3.5" />
-				</button>
+				<InputGroupAddon align="inline-end">
+					<Tip label="Очистить">
+						<Button variant="ghost" size="icon-xs" onClick={handleClear}>
+							<X className="size-3.5" />
+						</Button>
+					</Tip>
+				</InputGroupAddon>
 			)}
-		</div>
+		</InputGroup>
 	);
 });

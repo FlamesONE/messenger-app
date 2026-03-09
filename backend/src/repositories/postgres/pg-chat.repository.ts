@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import type {
 	ChatMemberRecord,
 	ChatRecord,
@@ -28,6 +28,31 @@ export class PgChatRepository implements IChatRepository {
 		return db.select().from(chats).where(inArray(chats.id, chatIds));
 	}
 
+	async findDmBetween(userIdA: string, userIdB: string): Promise<ChatRecord | null> {
+		const rows = await db
+			.select({ id: chats.id })
+			.from(chats)
+			.innerJoin(chatMembers, eq(chats.id, chatMembers.chatId))
+			.where(
+				and(
+					eq(chats.isGroup, false),
+					inArray(chatMembers.userId, [userIdA, userIdB]),
+				),
+			)
+			.groupBy(chats.id)
+			.having(sql`count(distinct ${chatMembers.userId}) = 2`);
+
+		if (rows.length === 0) return null;
+		return this.findById(rows[0].id);
+	}
+
+	async findByInviteCode(code: string): Promise<ChatRecord | null> {
+		const row = await db.query.chats.findFirst({
+			where: eq(chats.inviteCode, code),
+		});
+		return row ?? null;
+	}
+
 	async create(data: CreateChatData): Promise<ChatRecord> {
 		return db.transaction(async (tx) => {
 			const [chat] = await tx
@@ -53,6 +78,10 @@ export class PgChatRepository implements IChatRepository {
 		});
 	}
 
+	async setInviteCode(chatId: string, code: string): Promise<void> {
+		await db.update(chats).set({ inviteCode: code }).where(eq(chats.id, chatId));
+	}
+
 	async addMember(
 		chatId: string,
 		userId: string,
@@ -70,6 +99,10 @@ export class PgChatRepository implements IChatRepository {
 			.where(
 				and(eq(chatMembers.chatId, chatId), eq(chatMembers.userId, userId)),
 			);
+	}
+
+	async deleteChat(chatId: string): Promise<void> {
+		await db.delete(chats).where(eq(chats.id, chatId));
 	}
 
 	async getMembers(chatId: string): Promise<ChatMemberRecord[]> {

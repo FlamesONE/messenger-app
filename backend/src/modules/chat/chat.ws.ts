@@ -20,6 +20,23 @@ export function registerChatWsHandlers(
 			}
 
 			wsManager.join(chatId, ws);
+
+			// Broadcast online status to other members in this room
+			wsManager.broadcastToChatExcept(chatId, userId, {
+				event: "chat:presence",
+				data: { userId, status: "online" },
+			});
+
+			// Send presence of other online members to the joining user
+			const roomMembers = wsManager.getOnlineUserIdsInChat(chatId);
+			for (const memberId of roomMembers) {
+				if (memberId !== userId) {
+					ws.send(JSON.stringify({
+						event: "chat:presence",
+						data: { userId: memberId, status: "online" },
+					}));
+				}
+			}
 		} catch (err) {
 			logger.error(err, "WS chat:join handler error");
 		}
@@ -49,22 +66,5 @@ export function registerChatWsHandlers(
 		}
 	});
 
-	wsRouter.register("chat:presence", async (ws, data) => {
-		try {
-			const userId = ws.data.userId;
-			if (!userId) return;
-
-			const { status, lastSeen } = data as {
-				status: "online" | "offline";
-				lastSeen?: string;
-			};
-
-			wsManager.broadcastToUser(userId, {
-				event: "chat:presence",
-				data: { userId, status, lastSeen },
-			});
-		} catch (err) {
-			logger.error(err, "WS chat:presence handler error");
-		}
-	});
+	// chat:presence is handled automatically via chat:join and disconnect
 }

@@ -1,5 +1,3 @@
-import { createContainer, asClass, asValue, asFunction, InjectionMode } from "awilix";
-
 import { redis } from "@/infrastructure/redis/client";
 import { CacheService } from "@/infrastructure/redis/cache.service";
 import { BullMQJobQueue } from "@/infrastructure/bullmq/bullmq-job-queue";
@@ -13,94 +11,75 @@ import { S3FileStorage } from "@/repositories/s3/s3-file-storage";
 import { CachedUserRepository } from "@/repositories/cached/cached-user.repository";
 import { CachedChatRepository } from "@/repositories/cached/cached-chat.repository";
 
-import { RegisterUseCase } from "@/modules/auth/use-cases/register";
-import { LoginUseCase } from "@/modules/auth/use-cases/login";
-import { CreateChatUseCase } from "@/modules/chat/use-cases/create-chat";
-import { GetUserChatsUseCase } from "@/modules/chat/use-cases/get-user-chats";
-import { AddMemberUseCase } from "@/modules/chat/use-cases/add-member";
-import { SendMessageUseCase } from "@/modules/message/use-cases/send-message";
-import { GetHistoryUseCase } from "@/modules/message/use-cases/get-history";
-import { DeleteMessageUseCase } from "@/modules/message/use-cases/delete-message";
-import { MarkAsReadUseCase } from "@/modules/message/use-cases/mark-as-read";
-import { GetProfileUseCase } from "@/modules/user/use-cases/get-profile";
-import { UpdateProfileUseCase } from "@/modules/user/use-cases/update-profile";
-import { UploadFileUseCase } from "@/modules/upload/use-cases/upload-file";
-
-import { NotificationJobHandler } from "@/modules/message/jobs/notification.handler";
-import { MediaProcessingJobHandler } from "@/modules/upload/jobs/media-processing.handler";
-
+import type { IChatRepository } from "@/repositories/interfaces/chat.repository";
+import type { IUserRepository } from "@/repositories/interfaces/user.repository";
+import type { IMessageRepository } from "@/repositories/interfaces/message.repository";
+import type { IFileStorage } from "@/repositories/interfaces/file-storage";
+import type { IWsManager, IWsRouter } from "@/transport/ws.types";
+import type { IJobQueue } from "@/infrastructure/bullmq/types";
+import { EventBus } from "@/infrastructure/event-bus/event-bus";
 import type { NotificationJobData } from "@/modules/message/jobs/notification.types";
 import type { MediaProcessingJobData } from "@/modules/upload/jobs/media-processing.types";
 
-export function createAppContainer() {
-	const container = createContainer({
-		injectionMode: InjectionMode.CLASSIC,
-	});
+export interface AppContext {
+	// repositories
+	userRepo: IUserRepository;
+	chatRepo: IChatRepository;
+	messageRepo: IMessageRepository;
+	fileStorage: IFileStorage;
 
-	container.register({
-		// ─── Infrastructure ───────────────────────────────
-		redis: asValue(redis),
-		cacheService: asClass(CacheService).singleton(),
+	// transport
+	wsManager: IWsManager;
+	wsRouter: IWsRouter;
 
-		// ─── WebSocket ────────────────────────────────────
-		wsManager: asClass(WsConnectionManager).singleton(),
-		wsRouter: asClass(WsRouter).singleton(),
+	// events
+	eventBus: EventBus;
 
-		// ─── Job queues ───────────────────────────────────
-		notificationQueue: asFunction(() =>
-			new BullMQJobQueue<NotificationJobData>("notification", {
-				attempts: 3,
-				backoff: { type: "exponential", delay: 1000 },
-			}),
-		).singleton(),
-
-		mediaProcessingQueue: asFunction(() =>
-			new BullMQJobQueue<MediaProcessingJobData>("media-processing", {
-				attempts: 2,
-				backoff: { type: "exponential", delay: 2000 },
-				removeOnComplete: 50,
-				removeOnFail: 200,
-			}),
-		).singleton(),
-
-		// ─── Job handlers ─────────────────────────────────
-		notificationJobHandler: asClass(NotificationJobHandler).singleton(),
-		mediaProcessingJobHandler: asClass(MediaProcessingJobHandler).singleton(),
-
-		// ─── Raw repositories ─────────────────────────────
-		pgUserRepo: asClass(PgUserRepository).singleton(),
-		pgChatRepo: asClass(PgChatRepository).singleton(),
-		messageRepo: asClass(ScyllaMessageRepository).singleton(),
-		fileStorage: asClass(S3FileStorage).singleton(),
-
-		// ─── Cached repositories ──────────────────────────
-		userRepo: asClass(CachedUserRepository).singleton(),
-		chatRepo: asClass(CachedChatRepository).singleton(),
-
-		// ─── Auth use-cases ───────────────────────────────
-		registerUC: asClass(RegisterUseCase).singleton(),
-		loginUC: asClass(LoginUseCase).singleton(),
-
-		// ─── Chat use-cases ───────────────────────────────
-		createChatUC: asClass(CreateChatUseCase).singleton(),
-		getUserChatsUC: asClass(GetUserChatsUseCase).singleton(),
-		addMemberUC: asClass(AddMemberUseCase).singleton(),
-
-		// ─── Message use-cases ────────────────────────────
-		sendMessageUC: asClass(SendMessageUseCase).singleton(),
-		getHistoryUC: asClass(GetHistoryUseCase).singleton(),
-		deleteMessageUC: asClass(DeleteMessageUseCase).singleton(),
-		markAsReadUC: asClass(MarkAsReadUseCase).singleton(),
-
-		// ─── User use-cases ───────────────────────────────
-		getProfileUC: asClass(GetProfileUseCase).singleton(),
-		updateProfileUC: asClass(UpdateProfileUseCase).singleton(),
-
-		// ─── Upload use-cases ─────────────────────────────
-		uploadFileUC: asClass(UploadFileUseCase).singleton(),
-	});
-
-	return container;
+	// job queues
+	notificationQueue: IJobQueue<NotificationJobData>;
+	mediaProcessingQueue: IJobQueue<MediaProcessingJobData>;
 }
 
-export type AppContainer = ReturnType<typeof createAppContainer>;
+export function createAppContext(): AppContext {
+	const cacheService = new CacheService(redis);
+
+	// raw repositories
+	const pgUserRepo = new PgUserRepository();
+	const pgChatRepo = new PgChatRepository();
+	const messageRepo = new ScyllaMessageRepository();
+	const fileStorage = new S3FileStorage();
+
+	// cached repositories
+	const userRepo = new CachedUserRepository(pgUserRepo, cacheService);
+	const chatRepo = new CachedChatRepository(pgChatRepo, cacheService);
+
+	// transport
+	const wsManager = new WsConnectionManager();
+	const wsRouter = new WsRouter();
+	const eventBus = new EventBus();
+
+	// job queues
+	const notificationQueue = new BullMQJobQueue<NotificationJobData>("notification", {
+		attempts: 3,
+		backoff: { type: "exponential", delay: 1000 },
+	});
+
+	const mediaProcessingQueue = new BullMQJobQueue<MediaProcessingJobData>("media-processing", {
+		attempts: 2,
+		backoff: { type: "exponential", delay: 2000 },
+		removeOnComplete: 50,
+		removeOnFail: 200,
+	});
+
+	return {
+		userRepo,
+		chatRepo,
+		messageRepo,
+		fileStorage,
+		wsManager,
+		wsRouter,
+		eventBus,
+		notificationQueue,
+		mediaProcessingQueue,
+	};
+}

@@ -8,6 +8,13 @@
       "when": 1772472702137,
       "tag": "0000_condemned_thanos",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1773059987393,
+      "tag": "0001_loving_post",
+      "breakpoints": true
     }
   ]
 }

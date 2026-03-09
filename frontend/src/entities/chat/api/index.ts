@@ -1,2 +1,2 @@
-export { useCreateChat } from "./mutations";
-export { chatKeys, useChats } from "./queries";
+export { useAddMember, useCreateChat, useDeleteChat, useGenerateInviteLink, useJoinByInvite, useLeaveChat } from "./mutations";
+export { chatKeys, sortChatsByLastActivity, useChatMembers, useChats } from "./queries";

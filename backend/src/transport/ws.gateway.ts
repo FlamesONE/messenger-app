@@ -55,6 +55,14 @@ export function createWsGateway(wsManager: IWsManager, wsRouter: IWsRouter) {
 			},
 
 			close(ws) {
+				const userId = (ws.data as { userId?: string }).userId;
+				if (userId) {
+					// If this is the user's last socket, broadcast offline
+					const count = wsManager.getUserSocketCount(userId);
+					if (count <= 1) {
+						wsManager.broadcastPresenceToRooms(userId, "offline");
+					}
+				}
 				wsManager.removeFromAll(ws as unknown as IWsSocket);
 				logger.debug({ id: ws.id }, "WebSocket disconnected");
 			},

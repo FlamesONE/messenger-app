@@ -1,11 +1,14 @@
 import {
 	DeleteObjectCommand,
+	GetObjectCommand,
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
 import { nanoid } from "nanoid";
 import type {
 	FileData,
+	FileMeta,
+	FileObject,
 	IFileStorage,
 	UploadResult,
 } from "@/repositories/interfaces/file-storage";
@@ -13,6 +16,7 @@ import { env } from "@/shared/config/env";
 
 export class S3FileStorage implements IFileStorage {
 	private client: S3Client;
+	private metaCache = new Map<string, FileMeta>();
 
 	constructor() {
 		this.client = new S3Client({
@@ -39,14 +43,18 @@ export class S3FileStorage implements IFileStorage {
 				Key: key,
 				Body: file.buffer,
 				ContentType: file.type,
+				CacheControl: "public, max-age=31536000, immutable",
 			}),
 		);
+
+		this.metaCache.set(key, { name: file.name, type: file.type, size: file.size });
 
 		return {
 			url: this.getUrl(key),
 			key,
 			size: file.size,
 			type: file.type,
+			name: file.name,
 		};
 	}
 
@@ -59,9 +67,30 @@ export class S3FileStorage implements IFileStorage {
 		);
 	}
 
+	async getObject(key: string): Promise<FileObject> {
+		const response = await this.client.send(
+			new GetObjectCommand({
+				Bucket: env.S3_BUCKET,
+				Key: key,
+			}),
+		);
+
+		const body = response.Body
+			? (response.Body.transformToWebStream() as ReadableStream)
+			: null;
+
+		return {
+			body,
+			contentType: response.ContentType,
+			contentLength: response.ContentLength,
+		};
+	}
+
+	getMeta(key: string): FileMeta | undefined {
+		return this.metaCache.get(key);
+	}
+
 	getUrl(key: string): string {
-		return env.S3_ENDPOINT
-			? `${env.S3_ENDPOINT}/${env.S3_BUCKET}/${key}`
-			: `https://${env.S3_BUCKET}.s3.${env.S3_REGION}.amazonaws.com/${key}`;
+		return `/api/files/${encodeURIComponent(key)}`;
 	}
 }

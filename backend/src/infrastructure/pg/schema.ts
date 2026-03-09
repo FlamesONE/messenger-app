@@ -42,6 +42,7 @@ export const chats = pgTable("chats", {
 		.$defaultFn(() => nanoid()),
 	name: varchar("name", { length: 255 }),
 	isGroup: boolean("is_group").default(false).notNull(),
+	inviteCode: varchar("invite_code", { length: 32 }).unique(),
 	createdById: text("created_by_id")
 		.notNull()
 		.references(() => users.id),

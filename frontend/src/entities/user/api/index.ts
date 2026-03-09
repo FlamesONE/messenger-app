@@ -1,2 +1,2 @@
-export { useLogin, useRegister } from "./mutations";
-export { useMe, userKeys } from "./queries";
+export { useLogin, useRegister, useUpdateProfile } from "./mutations";
+export { useMe, userKeys, useSearchUsers, useUserProfile } from "./queries";

@@ -36,12 +36,32 @@ export class CachedChatRepository implements IChatRepository {
 		return chats;
 	}
 
+	async findDmBetween(userIdA: string, userIdB: string): Promise<ChatRecord | null> {
+		const sorted = [userIdA, userIdB].sort();
+		const key = `dm:${sorted[0]}:${sorted[1]}`;
+		const cached = await this.cacheService.get<ChatRecord>(key);
+		if (cached) return cached;
+
+		const chat = await this.pgChatRepo.findDmBetween(userIdA, userIdB);
+		if (chat) await this.cacheService.set(key, chat, TTL);
+		return chat;
+	}
+
+	async findByInviteCode(code: string): Promise<ChatRecord | null> {
+		return this.pgChatRepo.findByInviteCode(code);
+	}
+
 	async create(data: CreateChatData): Promise<ChatRecord> {
 		const chat = await this.pgChatRepo.create(data);
 		for (const memberId of data.memberIds) {
 			await this.cacheService.del(`user-chats:${memberId}`);
 		}
 		return chat;
+	}
+
+	async setInviteCode(chatId: string, code: string): Promise<void> {
+		await this.pgChatRepo.setInviteCode(chatId, code);
+		await this.cacheService.del(`chat:${chatId}`);
 	}
 
 	async addMember(
@@ -64,6 +84,22 @@ export class CachedChatRepository implements IChatRepository {
 			`chat-member:${chatId}:${userId}`,
 			`chat-members:${chatId}`,
 		);
+	}
+
+	async deleteChat(chatId: string): Promise<void> {
+		const members = await this.getMembers(chatId);
+		await this.pgChatRepo.deleteChat(chatId);
+		const keysToInvalidate = [
+			`chat:${chatId}`,
+			`chat-members:${chatId}`,
+			...members.map((m) => `user-chats:${m.userId}`),
+			...members.map((m) => `chat-member:${chatId}:${m.userId}`),
+		];
+		if (members.length === 2) {
+			const sorted = [members[0].userId, members[1].userId].sort();
+			keysToInvalidate.push(`dm:${sorted[0]}:${sorted[1]}`);
+		}
+		await this.cacheService.del(...keysToInvalidate);
 	}
 
 	async getMembers(chatId: string): Promise<ChatMemberRecord[]> {
