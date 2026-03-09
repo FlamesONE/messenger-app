@@ -1,8 +1,8 @@
 [package]
 name = "message-app"
-version = "0.1.1"
+version = "1.0.0"
 description = "Fasty Desktop"
-authors = ["you"]
+authors = ["Flames"]
 edition = "2021"
 
 [lib]

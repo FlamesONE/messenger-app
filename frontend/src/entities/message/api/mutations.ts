@@ -43,14 +43,21 @@ export function useSendMessage() {
 				_failedPayload: variables,
 			};
 
-			qc.setQueryData<InfiniteData<Message[]>>(key, (old) => {
-				if (!old) return old;
-				const firstPage = old.pages[0] || [];
-				return {
-					...old,
-					pages: [[optimisticMsg, ...firstPage], ...old.pages.slice(1)],
-				};
-			});
+			if (!previous) {
+				qc.setQueryData<InfiniteData<Message[]>>(key, {
+					pages: [[optimisticMsg]],
+					pageParams: [undefined],
+				});
+			} else {
+				qc.setQueryData<InfiniteData<Message[]>>(key, (old) => {
+					if (!old) return old;
+					const firstPage = old.pages[0] || [];
+					return {
+						...old,
+						pages: [[optimisticMsg, ...firstPage], ...old.pages.slice(1)],
+					};
+				});
+			}
 
 			qc.setQueryData<Chat[]>(chatKeys.all, (old) => {
 				if (!old) return old;
