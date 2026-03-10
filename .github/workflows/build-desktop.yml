@@ -266,5 +266,3 @@ jobs:
           draft: false
           generate_release_notes: true
           files: artifacts/**/*
-
-          
