@@ -12,7 +12,58 @@ permissions:
   contents: write
 
 jobs:
+  # ─── Парсинг версии из commit message, bump файлов, создание тега ──
+  tag-release:
+    runs-on: ubuntu-latest
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check commit message for version
+        id: check
+        run: |
+          MSG=$(git log -1 --pretty=%s)
+          if [[ "$MSG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update version in project files
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.version }}"
+          sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"$VERSION\"/" \
+            frontend/package.json \
+            frontend/src-tauri/tauri.conf.json \
+            backend/package.json
+          sed -i "s/^version = \"[^\"]*\"/version = \"$VERSION\"/" \
+            frontend/src-tauri/Cargo.toml
+
+      - name: Commit version bump & create tag
+        if: steps.check.outputs.should_release == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore: bump version to $VERSION"
+          git tag "v$VERSION"
+          git push origin HEAD "v$VERSION"
+
+  # ─── Desktop builds ────────────────────────────────────
   build-desktop:
+    needs: [tag-release]
+    if: |
+      always() && (
+        startsWith(github.ref, 'refs/tags/v')
+        || needs.tag-release.outputs.should_release == 'true'
+      )
     strategy:
       fail-fast: false
       matrix:
@@ -30,6 +81,8 @@ jobs:
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.tag-release.outputs.version && format('v{0}', needs.tag-release.outputs.version) || github.ref }}
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -72,10 +125,19 @@ jobs:
             frontend/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.dmg
             frontend/src-tauri/target/${{ matrix.target }}/release/bundle/**/*.app.tar.gz
 
+  # ─── Android build ─────────────────────────────────────
   build-android:
+    needs: [tag-release]
+    if: |
+      always() && (
+        startsWith(github.ref, 'refs/tags/v')
+        || needs.tag-release.outputs.should_release == 'true'
+      )
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.tag-release.outputs.version && format('v{0}', needs.tag-release.outputs.version) || github.ref }}
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -134,6 +196,41 @@ jobs:
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
 
+      - name: Setup Android signing
+        if: ${{ env.HAS_ANDROID_KEY == 'true' }}
+        run: |
+          cd frontend/src-tauri/gen/android
+          echo "keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}" > keystore.properties
+          echo "password=${{ secrets.ANDROID_KEY_PASSWORD }}" >> keystore.properties
+          base64 -d <<< "${{ secrets.ANDROID_KEY_BASE64 }}" > $RUNNER_TEMP/keystore.jks
+          echo "storeFile=$RUNNER_TEMP/keystore.jks" >> keystore.properties
+        env:
+          HAS_ANDROID_KEY: ${{ secrets.ANDROID_KEY_BASE64 != '' }}
+
+      - name: Patch build.gradle.kts for release signing
+        if: ${{ env.HAS_ANDROID_KEY == 'true' }}
+        run: |
+          GRADLE_FILE="frontend/src-tauri/gen/android/app/build.gradle.kts"
+
+          sed -i '/buildTypes {/i \
+          signingConfigs {\
+              create("release") {\
+                  val keystorePropertiesFile = rootProject.file("keystore.properties")\
+                  val keystoreProperties = java.util.Properties()\
+                  if (keystorePropertiesFile.exists()) {\
+                      keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))\
+                  }\
+                  keyAlias = keystoreProperties["keyAlias"] as String\
+                  keyPassword = keystoreProperties["password"] as String\
+                  storeFile = file(keystoreProperties["storeFile"] as String)\
+                  storePassword = keystoreProperties["password"] as String\
+              }\
+          }' "$GRADLE_FILE"
+
+          sed -i 's/getByName("release") {/getByName("release") {\n                signingConfig = signingConfigs.getByName("release")/' "$GRADLE_FILE"
+        env:
+          HAS_ANDROID_KEY: ${{ secrets.ANDROID_KEY_BASE64 != '' }}
+
       - name: Build APK (arm64)
         working-directory: frontend
         run: bunx tauri android build --apk --target aarch64
@@ -146,34 +243,21 @@ jobs:
           name: fasty-android-apk
           path: frontend/src-tauri/gen/android/app/build/outputs/apk/**/*.apk
 
+  # ─── GitHub Release ────────────────────────────────────
   create-release:
-    needs: [build-desktop, build-android]
+    needs: [tag-release, build-desktop, build-android]
+    if: always() && needs.build-desktop.result == 'success' && needs.build-android.result == 'success'
     runs-on: ubuntu-latest
-    if: startsWith(github.event.head_commit.message, 'v')
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Extract version from commit message
-        id: ver
-        run: |
-          MSG="${{ github.event.head_commit.message }}"
-          VERSION=$(echo "$MSG" | head -1 | grep -oP '^v[\d.]+')
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Create tag
-        run: |
-          git tag "${{ steps.ver.outputs.version }}"
-          git push origin "${{ steps.ver.outputs.version }}"
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.ver.outputs.version }}
+          tag_name: ${{ needs.tag-release.outputs.version && format('v{0}', needs.tag-release.outputs.version) || github.ref_name }}
           draft: false
           generate_release_notes: true
           files: artifacts/**/*

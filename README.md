@@ -32,20 +32,20 @@ cp .env.example .env
 docker compose up -d
 ```
 
-Это поднимет **все сервисы**: PostgreSQL, ScyllaDB, Redis, Meilisearch, MinIO, миграции и backend.
+Это поднимет **все сервисы**: PostgreSQL, ScyllaDB, Redis, Meilisearch, MinIO, миграции, backend и frontend (Caddy).
 
-**3.** Backend будет доступен на `http://localhost:3000`.
+**3.** Приложение будет доступно на `http://localhost:80`. Caddy проксирует `/api/*` и `/ws` на backend, остальное отдаёт как SPA.
 
-**4.** Для frontend (dev-режим):
-
-```bash
-cd frontend
-cp .env.example .env
-bun install
-bun run dev
-```
-
-Frontend будет доступен на `http://localhost:5173`, API проксируется автоматически.
+> **Для локальной разработки frontend** (hot-reload):
+>
+> ```bash
+> cd frontend
+> cp .env.example .env
+> bun install
+> bun run dev
+> ```
+>
+> Dev-сервер будет на `http://localhost:5173`, API проксируется автоматически.
 
 ### Полезные команды
 
@@ -136,7 +136,7 @@ S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
 
 # ── CORS ────────────────────────────────────────────────
-CORS_ORIGIN=http://localhost:5173
+CORS_ORIGIN=http://localhost:5173,http://tauri.localhost,https://tauri.localhost,tauri://localhost
 
 # ── Meilisearch ────────────────────────────────────────
 MEILISEARCH_URL=http://meilisearch:7700
@@ -169,7 +169,7 @@ S3_BUCKET=messenger-uploads
 S3_ACCESS_KEY=minioadmin
 S3_SECRET_KEY=minioadmin
 
-CORS_ORIGIN=http://localhost:5173
+CORS_ORIGIN=http://localhost:5173,http://tauri.localhost,https://tauri.localhost,tauri://localhost
 
 MEILISEARCH_URL=http://localhost:7700
 MEILISEARCH_KEY=masterKey
@@ -434,14 +434,15 @@ bunx tauri android build  # android (нужен Android SDK + NDK)
 
 | Сервис | Образ | Порт | Назначение |
 |---|---|---|---|
+| **caddy** | `caddy:2-alpine` | `80` | Frontend (SPA) + reverse proxy на backend |
+| **backend** | *backend image* | `3000` | API-сервер приложения |
+| **migrate** | *backend image* | — | Применение миграций PostgreSQL |
 | **postgres** | `postgres:18-alpine` | `5432` | Основная БД (пользователи, чаты) |
 | **scylla** | `scylladb/scylla:2025.1` | `9042` | Хранение сообщений |
 | **redis** | `redis:8-alpine` | `6379` | Кеширование и pub/sub |
 | **meilisearch** | `getmeili/meilisearch:v1.37` | `7700` | Полнотекстовый поиск |
 | **minio** | `minio/minio:latest` | `9000` / `9001` | S3-совместимое файловое хранилище |
 | **minio-init** | `minio/mc:latest` | — | Создание bucket при первом запуске |
-| **migrate** | *backend image* | — | Применение миграций PostgreSQL |
-| **backend** | *backend image* | `3000` | API-сервер приложения |
 
 ---
 

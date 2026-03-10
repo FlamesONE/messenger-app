@@ -39,6 +39,9 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "android": {
+      "minSdkVersion": 24
+    },
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
