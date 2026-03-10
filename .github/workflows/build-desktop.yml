@@ -212,21 +212,26 @@ jobs:
         run: |
           GRADLE_FILE="frontend/src-tauri/gen/android/app/build.gradle.kts"
 
-          sed -i '/buildTypes {/i \
-          signingConfigs {\
-              create("release") {\
-                  val keystorePropertiesFile = rootProject.file("keystore.properties")\
-                  val keystoreProperties = java.util.Properties()\
-                  if (keystorePropertiesFile.exists()) {\
-                      keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))\
-                  }\
-                  keyAlias = keystoreProperties["keyAlias"] as String\
-                  keyPassword = keystoreProperties["password"] as String\
-                  storeFile = file(keystoreProperties["storeFile"] as String)\
-                  storePassword = keystoreProperties["password"] as String\
-              }\
-          }' "$GRADLE_FILE"
+          # Add imports at the top of the file
+          sed -i '1i import java.util.Properties\nimport java.io.FileInputStream' "$GRADLE_FILE"
 
+          # Insert signingConfigs block before buildTypes
+          sed -i '/buildTypes {/i \
+              signingConfigs {\
+                  create("release") {\
+                      val keystorePropertiesFile = rootProject.file("keystore.properties")\
+                      val keystoreProperties = Properties()\
+                      if (keystorePropertiesFile.exists()) {\
+                          keystoreProperties.load(FileInputStream(keystorePropertiesFile))\
+                      }\
+                      keyAlias = keystoreProperties["keyAlias"].toString()\
+                      keyPassword = keystoreProperties["password"].toString()\
+                      storeFile = file(keystoreProperties["storeFile"].toString())\
+                      storePassword = keystoreProperties["password"].toString()\
+                  }\
+              }' "$GRADLE_FILE"
+
+          # Add signingConfig to release buildType
           sed -i 's/getByName("release") {/getByName("release") {\n                signingConfig = signingConfigs.getByName("release")/' "$GRADLE_FILE"
         env:
           HAS_ANDROID_KEY: ${{ secrets.ANDROID_KEY_BASE64 != '' }}
