@@ -212,8 +212,9 @@ jobs:
         run: |
           GRADLE_FILE="frontend/src-tauri/gen/android/app/build.gradle.kts"
 
-          # Add imports at the top of the file
-          sed -i '1i import java.util.Properties\nimport java.io.FileInputStream' "$GRADLE_FILE"
+          # Add imports only if not already present
+          grep -q 'import java.util.Properties' "$GRADLE_FILE" || sed -i '1i import java.util.Properties' "$GRADLE_FILE"
+          grep -q 'import java.io.FileInputStream' "$GRADLE_FILE" || sed -i '1i import java.io.FileInputStream' "$GRADLE_FILE"
 
           # Insert signingConfigs block before buildTypes
           sed -i '/buildTypes {/i \
